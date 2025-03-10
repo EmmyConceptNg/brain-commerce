@@ -1,4 +1,5 @@
-FROM node:18-alpine
+FROM node:latest
+
 
 ARG SHOPIFY_API_KEY
 ENV SHOPIFY_API_KEY=$SHOPIFY_API_KEY
