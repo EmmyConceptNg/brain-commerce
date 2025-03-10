@@ -18,8 +18,7 @@ import {
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux"; // Import useDispatch and useSelector from react-redux
-import { authenticatedFetch } from "@shopify/app-bridge-utils";
-
+import { useAuthenticatedFetch } from "../hooks/useAuthenticatedFetch";
 import { shopifyFetch, getShopifyHost } from "../utils/apiUtils";
 import { toast } from "react-toastify";
 import { setCredentials } from "../store/actions"; // Import the setCredentials action
@@ -46,6 +45,8 @@ export default function HomePage() {
   const [errors, setErrors] = useState({ apiKey: "", storeId: "" });
   const [host, setHost] = useState(""); // Add this line
 
+  const authenticatedFetch = useAuthenticatedFetch();
+
   useEffect(() => {
     setApiKey(apiKeyFromState);
     setStoreId(storeIdFromState);
@@ -67,8 +68,7 @@ export default function HomePage() {
   const validateApiKeyAndStoreId = async () => {
     try {
       const host = getShopifyHost();
-      const fetch = authenticatedFetch(app);
-      const response = await fetch(`/api/v1/validate-api-key`, {
+      const response = await authenticatedFetch(`/api/v1/validate-api-key`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,8 +110,7 @@ export default function HomePage() {
   const syncShopifyData = async () => {
     try {
       const host = getShopifyHost();
-      const fetch = authenticatedFetch(app);
-      const response = await fetch(`/api/v1/shopify-sync`, {
+      const response = await authenticatedFetch(`/api/v1/shopify-sync`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,8 +137,7 @@ export default function HomePage() {
   };
   const checkWebhooks = async () => {
     try {
-      const fetch = authenticatedFetch(app);
-      const response = await fetch(`/api/v1/admin/webhooks/check`, {
+      const response = await authenticatedFetch(`/api/v1/admin/webhooks/check`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
