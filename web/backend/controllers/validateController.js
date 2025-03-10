@@ -1,7 +1,3 @@
-import { SchemaTypeOptions } from "mongoose";
-import shopify from "../../shopify.js";
-import User from "../models/User.js";
-
 export const validate = async (req, res) => {
   const { apiKey, storeId } = req.body;
 
@@ -28,11 +24,6 @@ export const validate = async (req, res) => {
             node {
               id
               topic
-              endpoint {
-                ... on WebhookHttpEndpoint {
-                  callbackUrl
-                }
-              }
             }
           }
         }
@@ -46,9 +37,7 @@ export const validate = async (req, res) => {
     const existingWebhookMap =
       existingWebhooks.body.data.webhookSubscriptions.edges.reduce(
         (acc, edge) => {
-          const { topic } = edge.node;
-          // Just store the topic, we don't need to track URLs anymore
-          acc[topic] = true;
+          acc[edge.node.topic] = true;
           return acc;
         },
         {}
@@ -82,11 +71,8 @@ export const validate = async (req, res) => {
     ];
 
     for (const webhook of webhooks) {
-      // Simply check if we have any webhook for this topic
       if (existingWebhookMap[webhook.topic]) {
-        console.log(
-          `Webhook for ${webhook.topic} already exists, skipping creation`
-        );
+        console.log(`Webhook for ${webhook.topic} already exists, skipping.`);
         continue;
       }
 
@@ -131,13 +117,12 @@ export const validate = async (req, res) => {
             `Webhook creation error for ${webhook.topic}:`,
             response.body.data.webhookSubscriptionCreate.userErrors
           );
-          throw new Error(`Failed to create webhook for ${webhook.topic}`);
         } else {
           console.log(`Webhook for ${webhook.topic} created successfully.`);
         }
       } catch (error) {
         console.error(`Error creating webhook for ${webhook.topic}:`, error);
-        throw error;
+        // Do NOT throw the error; just log it and continue
       }
     }
 
@@ -148,11 +133,9 @@ export const validate = async (req, res) => {
     });
   } catch (error) {
     console.error("Webhook Creation Error:", error);
-    res
-      .status(500)
-      .json({
-        error: "Failed to validate API Key and create webhooks",
-        details: error.message,
-      });
+    res.status(500).json({
+      error: "Failed to validate API Key and create webhooks",
+      details: error.message,
+    });
   }
 };
