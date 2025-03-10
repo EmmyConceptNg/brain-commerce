@@ -56,27 +56,27 @@ export const validate = async (req, res) => {
 
     const webhooks = [
       {
-        topic: "BRAIN_COMMERCE_PRODUCTS_CREATE",
+        topic: "PRODUCTS_CREATE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-product-webhook?storeID=${storeId}&pageUrl=https://${shop}/products`,
       },
       {
-        topic: "BRAIN_COMMERCE_PRODUCTS_UPDATE",
+        topic: "PRODUCTS_UPDATE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-product-webhook?storeID=${storeId}&pageUrl=https://${shop}/products`,
       },
       {
-        topic: "BRAIN_COMMERCE_PRODUCTS_DELETE",
+        topic: "PRODUCTS_DELETE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-product-webhook?storeID=${storeId}&pageUrl=https://${shop}/products`,
       },
       {
-        topic: "BRAIN_COMMERCE_COLLECTIONS_CREATE",
+        topic: "COLLECTIONS_CREATE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-collection-webhook?storeID=${storeId}&pageUrl=https://${shop}/collections`,
       },
       {
-        topic: "BRAIN_COMMERCE_COLLECTIONS_UPDATE",
+        topic: "COLLECTIONS_UPDATE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-collection-webhook?storeID=${storeId}&pageUrl=https://${shop}/collections`,
       },
       {
-        topic: "BRAIN_COMMERCE_COLLECTIONS_DELETE",
+        topic: "COLLECTIONS_DELETE",
         callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-collection-webhook?storeID=${storeId}&pageUrl=https://${shop}/collections`,
       },
     ];
