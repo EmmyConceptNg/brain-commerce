@@ -250,7 +250,7 @@ export default function HomePage() {
     <Page narrowWidth>
       <Layout>
         <Layout.Section>
-          <img src="../assets/brain_commerce_logo.svg" alt="brain_commerce_image" width="200px"/>
+          <img src="../assets/brain_commerce_logo.svg" alt="brain_commerce_image" width="200px" />
           <Card sectioned>
             <BlockStack gap="500">
               <Text variant="headingLg" as="h1">
