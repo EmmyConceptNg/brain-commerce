@@ -19,9 +19,9 @@ scopes = "read_all_cart_transforms,read_all_checkout_completion_target_customiza
 
 [auth]
 redirect_urls = [
-  "https://acrobat-optics-basin-connection.trycloudflare.com/auth/callback",
-  "https://acrobat-optics-basin-connection.trycloudflare.com/auth/shopify/callback",
-  "https://acrobat-optics-basin-connection.trycloudflare.com/api/auth/callback"
+  "https://brain-commerce.onrender.com/auth/callback",
+  "https://brain-commerce.onrender.com/auth/shopify/callback",
+  "https://brain-commerce.onrender.com/api/auth/callback"
 ]
 
 [pos]
