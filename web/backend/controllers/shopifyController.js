@@ -293,7 +293,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         postID: data.id || ""
       };
 
-      console.log('Page content:', JSON.stringify(data)); // Log only the page content object
+      console.log('Page content (page):', JSON.stringify(data)); // Log only the page content object
 
       const pageResponse = await axios.post(endpoint, itemData, { headers });
       if (pageResponse.status === 200) {
@@ -332,7 +332,8 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         categoryID: data.id || ""
       };
 
-      console.log('Posting category data to Brain Commerce:', itemData);
+      // console.log('Posting category data to Brain Commerce:', itemData);
+      console.log("Page content: (category)", JSON.stringify(data));
 
       const categoryResponse = await axios.post(endpoint, itemData, { headers });
       if (categoryResponse.status === 200) {
@@ -378,7 +379,8 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         categoryID: data.collections?.edges?.[0]?.node?.id || ""
       };
 
-      console.log('Posting product data to Brain Commerce:', itemData);
+      // console.log('Posting product data to Brain Commerce:', itemData);
+      console.log("Page content: (product)", JSON.stringify(data));
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
       if (productResponse.status === 200) {
