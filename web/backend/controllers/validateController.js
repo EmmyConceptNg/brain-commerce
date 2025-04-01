@@ -1,4 +1,4 @@
-import shopify from "../../shopify";
+import shopify from "../../shopify.js";
 
 export const validate = async (req, res) => {
   const { apiKey, storeId } = req.body;
