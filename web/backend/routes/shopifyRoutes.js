@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
     const shop = session.shop;
 
     // Pass the app instance to postToBrainCommerce
-    await postToBrainCommerce(storeDetails, apiKey, storeId, req.app, shop);
+    await postToBrainCommerce(storeDetails, apiKey, storeId, req.app, shop, session);
 
     res.json({ success: true });
   } catch (error) {

@@ -182,7 +182,7 @@ export async function fetchShopifyStoreDetails(session) {
  * @param {Function} updateProgress - Function to update progress
  * @returns {Promise<void>}
  */
-export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, shop) {
+export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, shop,session) {
   const batchSize = 50;
   const maxRetries = 3;
   const queue = [];
@@ -203,21 +203,21 @@ export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, sh
 
     // Process pages
     for (const page of storeDetails.pages) {
-      await processItem({ type: 'page', data: page }, user, storeDetails.storeUrl, apiKey, storeId);
+      await processItem({ type: 'page', data: page }, user, storeDetails.storeUrl, apiKey, storeId, session);
       syncedPages++;
       sendProgress('pages', syncedPages, storeDetails.pages.length);
     }
 
     // Process products
     for (const product of storeDetails.products) {
-      await processItem({ type: 'product', data: product }, user, storeDetails.storeUrl, apiKey, storeId);
+      await processItem({ type: 'product', data: product }, user, storeDetails.storeUrl, apiKey, storeId, session);
       syncedProducts++;
       sendProgress('products', syncedProducts, storeDetails.products.length);
     }
 
     // Process categories
     for (const category of storeDetails.categories) {
-      await processItem({ type: 'category', data: category }, user, storeDetails.storeUrl, apiKey, storeId);
+      await processItem({ type: 'category', data: category }, user, storeDetails.storeUrl, apiKey, storeId, session);
       syncedCategories++;
       sendProgress('categories', syncedCategories, storeDetails.categories.length);
     }
@@ -252,7 +252,7 @@ class RateLimit {
   }
 }
 
-async function processItem(item, user, storeUrl, apiKey, storeId) {
+async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   const baseEndpoint = `https://www.braincommerce.io/api/v0/store/create-update-page?storeID=${storeId}`;
   const headers = {
     Authorization: apiKey,
@@ -317,8 +317,13 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
       
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
       
+      // Add top-selling categories to platformPageContent
+      const topSellingCategories = await fetchTopSellingCategories(data.id, session); // Fetch top-selling categories
       itemData = {
-        platformPageContent: JSON.stringify(data),
+        platformPageContent: JSON.stringify({
+          ...data,
+          topSellingCategories, // Include top-selling categories
+        }),
         pageType: "category",
         url: categoryUrl,
         h1: data.h1 || data.title || "",
@@ -332,8 +337,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         categoryID: data.id || ""
       };
 
-      // console.log('Posting category data to Brain Commerce:', itemData);
-      console.log("Page content: (category)", JSON.stringify(data));
+      console.log("Page content: (category)", JSON.stringify(itemData.platformPageContent));
 
       const categoryResponse = await axios.post(endpoint, itemData, { headers });
       if (categoryResponse.status === 200) {
@@ -392,6 +396,64 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
 
     default:
       console.warn(`Unknown item type: ${type}`);
+  }
+}
+
+// Helper function to fetch top-selling categories
+async function fetchTopSellingCategories(categoryId, session) {
+  try {
+    const client = new shopify.api.clients.Graphql({ session }); // Ensure session is available globally or passed as a parameter
+
+    const response = await client.query({
+      data: `{
+        collections(first: 10, query: "id:${categoryId}") {
+          edges {
+            node {
+              id
+              title
+              products(first: 10, sortKey: BEST_SELLING) {
+                edges {
+                  node {
+                    id
+                    title
+                    totalInventory
+                    variants(first: 1) {
+                      edges {
+                        node {
+                          price
+                          compareAtPrice
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }`
+    });
+
+    const collections = response.body.data.collections.edges.map(edge => {
+      const products = edge.node.products.edges.map(productEdge => ({
+        id: productEdge.node.id,
+        title: productEdge.node.title,
+        inventory: productEdge.node.totalInventory,
+        price: productEdge.node.variants.edges[0]?.node.price || null,
+        regularPrice: productEdge.node.variants.edges[0]?.node.compareAtPrice || null,
+      }));
+
+      return {
+        id: edge.node.id,
+        name: edge.node.title,
+        topProducts: products,
+      };
+    });
+
+    return collections;
+  } catch (error) {
+    console.error("Error fetching top-selling categories:", error);
+    return [];
   }
 }
 
