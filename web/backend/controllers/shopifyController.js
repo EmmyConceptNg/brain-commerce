@@ -381,7 +381,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         categoryID: data.collections?.edges?.[0]?.node?.id || "",
       };
 
-      console.log('Posting product data to Brain Commerce:', JOSN.stringify(itemData));
+      console.log('Posting product data to Brain Commerce:', JSON.stringify(itemData));
       console.log("Page content: (product)", JSON.stringify(data));
 
       const productResponse = await axios.post(endpoint, itemData, { headers });

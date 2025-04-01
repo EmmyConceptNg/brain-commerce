@@ -250,7 +250,13 @@ export default function HomePage() {
     <Page narrowWidth>
       <Layout>
         <Layout.Section>
-          <img src="../assets/brain_commerce_logo.svg" alt="brain_commerce_image" width="200px" />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <img
+              src="https://pub-ece2f518b9504c2884b29ab98d7f6283.r2.dev/brain_commerce_logo.svg"
+              alt="brain_commerce_image"
+              width="200px"
+            />
+          </div>
           <Card sectioned>
             <BlockStack gap="500">
               <Text variant="headingLg" as="h1">
