@@ -250,6 +250,7 @@ export default function HomePage() {
     <Page narrowWidth>
       <Layout>
         <Layout.Section>
+          <img src="../assets/brain_commerce_logo.svg" alt="brain_commerce_image"/>
           <Card sectioned>
             <BlockStack gap="500">
               <Text variant="headingLg" as="h1">
@@ -305,7 +306,10 @@ export default function HomePage() {
               {syncing && (
                 <Box padding="4">
                   <Spinner accessibilityLabel="Syncing" size="large" />
-                  <Text>Syncing: Please wait while we sync your data with Brain Commerce</Text>
+                  <Text>
+                    Syncing: Please wait while we sync your data with Brain
+                    Commerce
+                  </Text>
                 </Box>
               )}
             </BlockStack>
