@@ -366,20 +366,22 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         description: data.description || "",
         metaImage: data.metaImage || data.featuredMedia?.url || "",
         keywords: data.keywords || data.tags?.join(", ") || "",
-        visibleText: data.visibleText || data.descriptionHtml || data.description || "",
+        visibleText:
+          data.visibleText || data.descriptionHtml || data.description || "",
         breadcrumbs: data.breadcrumbs || [],
-        productPrice: data.priceRangeV2?.minVariantPrice?.amount || "",
-        productRegularPrice: data.compareAtPriceRange?.minVariantPrice?.amount || "",
+        productPrice: data.productPrice || "",
+        productRegularPrice: data.productRegularPrice || "",
         productWeight: data.variants?.edges?.[0]?.node?.weight || "",
-        productDimensions: "",  // Shopify doesn't have a standard dimensions field
-        productAverageRating: "",  // Add if available in your data
-        productRatingCount: "",    // Add if available in your data
-        productStockStatus: data.totalInventory > 0 ? "In Stock" : "Out of Stock",
+        productDimensions: "", // Shopify doesn't have a standard dimensions field
+        productAverageRating: "", // Add if available in your data
+        productRatingCount: "", // Add if available in your data
+        productStockStatus:
+          data.totalInventory > 0 ? "In Stock" : "Out of Stock",
         productID: data.id || "",
-        categoryID: data.collections?.edges?.[0]?.node?.id || ""
+        categoryID: data.collections?.edges?.[0]?.node?.id || "",
       };
 
-      // console.log('Posting product data to Brain Commerce:', itemData);
+      console.log('Posting product data to Brain Commerce:', JOSN.stringify(itemData));
       console.log("Page content: (product)", JSON.stringify(data));
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
