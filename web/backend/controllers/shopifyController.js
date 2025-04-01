@@ -293,7 +293,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         postID: data.id || ""
       };
 
-      console.log('Page content:', data); // Log only the page content object
+      console.log('Page content:', JSON.stringify(data)); // Log only the page content object
 
       const pageResponse = await axios.post(endpoint, itemData, { headers });
       if (pageResponse.status === 200) {
