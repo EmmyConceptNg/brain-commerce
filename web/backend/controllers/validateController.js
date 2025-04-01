@@ -1,4 +1,5 @@
 import shopify from "../../shopify.js";
+import User from "../models/User.js";
 
 export const validate = async (req, res) => {
   const { apiKey, storeId } = req.body;
