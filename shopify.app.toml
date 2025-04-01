@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "69d2e943e442b5bc9e43744e808a340a"
-application_url = "https://acrobat-optics-basin-connection.trycloudflare.com"
+application_url = "https://brain-commerce.onrender.com"
 embedded = true
 name = "BrainCommerce1"
 handle = "braincommerce1"

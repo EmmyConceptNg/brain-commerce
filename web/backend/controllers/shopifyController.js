@@ -56,6 +56,7 @@ export async function fetchShopifyStoreDetails(session) {
                   ... on MediaImage {
                     image {
                       originalSrc
+                      altText
                     }
                   }
                 }
@@ -65,6 +66,7 @@ export async function fetchShopifyStoreDetails(session) {
                       id
                       title
                       price
+                      compareAtPrice
                       sku
                       inventoryQuantity
                     }
@@ -75,13 +77,19 @@ export async function fetchShopifyStoreDetails(session) {
           }
         }`
       });
-      
+
       const { edges, pageInfo } = response.body.data.products;
-      storeDetails.products.push(...edges.map(edge => ({
-        ...edge.node,
-        url: `${storeDetails.storeUrl}/products/${edge.node.handle}`,
-      })));
-      
+      storeDetails.products.push(
+        ...edges.map((edge) => ({
+          ...edge.node,
+          url: `${storeDetails.storeUrl}/products/${edge.node.handle}`,
+          metaImage: edge.node.featuredMedia?.image?.originalSrc || null,
+          productPrice: edge.node.variants?.edges?.[0]?.node?.price || null, // Add product price
+          productRegularPrice:
+            edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null, // Add regular price
+        }))
+      );
+
       hasNextPage = pageInfo.hasNextPage;
       cursor = pageInfo.endCursor;
     }
@@ -285,7 +293,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId) {
         postID: data.id || ""
       };
 
-      console.log('Posting page data to Brain Commerce:', itemData);
+      console.log('Page content:', data); // Log only the page content object
 
       const pageResponse = await axios.post(endpoint, itemData, { headers });
       if (pageResponse.status === 200) {
