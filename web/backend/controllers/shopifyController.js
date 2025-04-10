@@ -217,9 +217,8 @@ export async function fetchShopifyStoreDetails(session) {
                       id
                       title
                       handle
-                      content
-                      contentHtml
-                      excerpt
+                      body
+                      createdAt
                       publishedAt
                       tags
                       image {
@@ -242,7 +241,7 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-        }`
+        }`,
       });
 
       const blogs = response.body.data.blogs.edges;
