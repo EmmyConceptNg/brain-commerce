@@ -627,29 +627,42 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 // Helper function to fetch top-selling categories
 async function fetchTopSellingCategories(categoryId, session) {
   try {
-    const client = new shopify.api.clients.Graphql({ session }); // Ensure session is available globally or passed as a parameter
+    const client = new shopify.api.clients.Graphql({ session });
 
     const response = await client.query({
       data: `{
-        collections(first: 10, query: "id:${categoryId}") {
-          edges {
-            node {
-              id
-              title
-              products(first: 10, sortKey: BEST_SELLING) {
-                edges {
-                  node {
-                    id
-                    title
-                    totalInventory
-                    variants(first: 1) {
-                      edges {
-                        node {
-                          price
-                          compareAtPrice
-                        }
-                      }
-                    }
+        collection(id: "${categoryId}") {
+          id
+          title
+          products(first: 10, sortKey: BEST_SELLING) {
+            edges {
+              node {
+                id
+                title
+                handle
+                totalInventory
+                featuredImage {
+                  originalSrc
+                  altText
+                }
+                priceRange {
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                  maxVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+                compareAtPriceRange {
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                  maxVariantPrice {
+                    amount
+                    currencyCode
                   }
                 }
               }
@@ -659,27 +672,31 @@ async function fetchTopSellingCategories(categoryId, session) {
       }`,
     });
 
-    const collections = response.body.data.collections.edges.map((edge) => {
-      const products = edge.node.products.edges.map((productEdge) => ({
-        id: productEdge.node.id,
-        title: productEdge.node.title,
-        inventory: productEdge.node.totalInventory,
-        price: productEdge.node.variants.edges[0]?.node.price || null,
-        regularPrice:
-          productEdge.node.variants.edges[0]?.node.compareAtPrice || null,
-      }));
+    const collection = response.body.data.collection;
+    if (!collection) return [];
 
-      return {
-        id: edge.node.id,
-        name: edge.node.title,
-        topProducts: products,
-      };
-    });
+    const topProducts = collection.products.edges.map(({ node }) => ({
+      id: node.id,
+      title: node.title,
+      handle: node.handle,
+      url: `${storeUrl}/products/${node.handle}`,
+      inventory: node.totalInventory,
+      image: node.featuredImage?.originalSrc || null,
+      imageAlt: node.featuredImage?.altText || null,
+      price: node.priceRange.minVariantPrice.amount,
+      compareAtPrice: node.compareAtPriceRange.minVariantPrice.amount,
+      currencyCode: node.priceRange.minVariantPrice.currencyCode
+    }));
 
-    return collections;
+    return {
+      id: collection.id,
+      title: collection.title,
+      topProducts
+    };
+
   } catch (error) {
-    console.error("Error fetching top-selling categories:", error);
-    return [];
+    console.error("Error fetching top-selling products for category:", error);
+    return null;
   }
 }
 
