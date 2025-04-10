@@ -52,6 +52,15 @@ export async function fetchShopifyStoreDetails(session) {
                 tags
                 handle
                 totalInventory
+                collections(first: 10) {
+                  edges {
+                    node {
+                      id
+                      title
+                      handle
+                    }
+                  }
+                }
                 featuredMedia {
                   ... on MediaImage {
                     image {
@@ -87,6 +96,12 @@ export async function fetchShopifyStoreDetails(session) {
           productPrice: edge.node.variants?.edges?.[0]?.node?.price || null, // Add product price
           productRegularPrice:
             edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null, // Add regular price
+          collections: edge.node.collections?.edges?.map(col => ({
+            id: col.node.id,
+            title: col.node.title,
+            handle: col.node.handle,
+            url: `${storeDetails.storeUrl}/collections/${col.node.handle}`
+          })) || []
         }))
       );
 
