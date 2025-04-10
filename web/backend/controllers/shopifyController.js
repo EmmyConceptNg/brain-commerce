@@ -231,10 +231,7 @@ export async function fetchShopifyStoreDetails(session) {
                       blog {
                         handle
                       }
-                      seo {
-                        title
-                        description
-                      }
+                     
                     }
                   }
                 }
