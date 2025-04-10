@@ -262,145 +262,145 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   const { type, data } = item;
   let endpoint, itemData;
 
-  // Helper function to format page content
-  function formatPageContent(data, type) {
-    const baseContent = {
-      id: data.id,
-      title: data.title,
-      handle: data.handle,
-      url: data.url,
-    };
-
-    switch (type) {
-      case 'product':
-        return {
-          ...baseContent,
-          description: data.descriptionHtml || '',
-          vendor: data.vendor,
-          productType: data.productType,
-          tags: data.tags,
-          totalInventory: data.totalInventory,
-          image: data.featuredMedia?.image?.originalSrc,
-          price: data.productPrice,
-          regularPrice: data.productRegularPrice,
-          variants: data.variants?.edges?.map(edge => ({
-            id: edge.node.id,
-            title: edge.node.title,
-            price: edge.node.price,
-            sku: edge.node.sku,
-            inventory: edge.node.inventoryQuantity
-          })) || []
-        };
-
-      case 'page':
-        return {
-          ...baseContent,
-          body: data.body || '',
-          template: data.template || 'default'
-        };
-
-      case 'category':
-        return {
-          ...baseContent,
-          description: data.descriptionHtml || '',
-          topSellingProducts: data.topSellingProducts || []
-        };
-
-      default:
-        return baseContent;
-    }
-  }
-
   switch (type) {
     case 'page':
-    case 'product':
-      let categories = [];
-      let breadcrumbsData = [];
-      
-      const url = data.url || (type === 'page' 
-        ? `${storeUrl}/pages/${data.handle}`
-        : `${storeUrl}/products/${data.handle}`);
-      
-      if (type === 'product') {
-        categories = await fetchProductCategories(data.id);
-        breadcrumbsData = categories.map(cat => ({
-          title: cat.title,
-          url: `${storeUrl}/collections/${cat.handle}`
-        }));
-        
-        breadcrumbsData.unshift({ title: 'Home', url: storeUrl });
-        if (data.title) {
-          breadcrumbsData.push({ title: data.title, url: '' });
-        }
+      if (user.syncedPages.includes(data.id)) {
+        console.warn(`Skipping already synced page with ID ${data.id}`);
+        return;
       }
 
-      const formattedContent = formatPageContent(data, type);
-
+      const pageUrl = data.onlineStoreUrl || 
+                      (data.handle ? `${storeUrl}/pages/${data.handle}` : null);
+                      
+      if (!pageUrl) {
+        console.warn(`Skipping page with ID ${data.id} - no URL available`);
+        return;
+      }
+      
+      endpoint = `${baseEndpoint}&url=${encodeURIComponent(pageUrl)}`;
+      
       itemData = {
-        platformPageContent: formattedContent,
+        platformPageContent: JSON.stringify(data, null, 2),
         pageType: "single",
-        url: url,  // Using the constructed URL
+        url: pageUrl,
+        h1: data.h1 || data.title || "",
+        title: data.title || "",
+        description: data.description || "",
+        metaImage: data.metaImage || "",
+        keywords: data.keywords || "",
+        visibleText: data.visibleText || data.body || "",
+        breadcrumbs: data.tags || [],
+        postID: data.id || "",
+      };
+
+      console.log('Page content (page):', JSON.stringify(data, null, 2)); // Format with indentation
+
+      const pageResponse = await axios.post(endpoint, itemData, { headers });
+      if (pageResponse.status === 200) {
+        user.syncedPages.push(data.id);
+      }
+      break;
+
+    case 'category':
+      if (user.syncedCategories.includes(data.id)) {
+        console.warn(`Skipping already synced category with ID ${data.id}`);
+        return;
+      }
+
+      const categoryUrl = data.onlineStoreUrl || 
+                         (data.handle ? `${storeUrl}/collections/${data.handle}` : null);
+                         
+      if (!categoryUrl) {
+        console.warn(`Skipping category with ID ${data.id} - no URL available`);
+        return;
+      }
+      
+      endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
+      
+      // Add top-selling categories to platformPageContent
+      const topSellingCategories = await fetchTopSellingCategories(data.id, session); // Fetch top-selling categories
+      itemData = {
+        platformPageContent: JSON.stringify(
+          {
+            ...data,
+            topSellingCategories, // Include top-selling categories
+          },
+          null,
+          2
+        ),
+        pageType: "category",
+        url: categoryUrl,
+        h1: data.h1 || data.title || "",
+        title: data.title || "",
+        description: data.description || "",
+        metaImage: data.metaImage || "",
+        keywords: data.keywords || "",
+        visibleText: data.visibleText || data.body || "",
+        breadcrumbs: data.tags || [],
+        categoryTagName: data.tags || [],
+        categoryID: data.id || "",
+      };
+
+      console.log("Page content: (category)", JSON.stringify(itemData.platformPageContent, null, 2)); // Format with indentation
+
+      const categoryResponse = await axios.post(endpoint, itemData, { headers });
+      if (categoryResponse.status === 200) {
+        user.syncedCategories.push(data.id);
+      }
+      break;
+
+    case 'product':
+      if (user.syncedProducts.includes(data.id)) {
+        console.warn(`Skipping already synced product with ID ${data.id}`);
+        return;
+      }
+
+      const productUrl = data.onlineStoreUrl || 
+                        (data.handle ? `${storeUrl}/products/${data.handle}` : null);
+                        
+      if (!productUrl) {
+        console.warn(`Skipping product with ID ${data.id} - no URL available`);
+        return;
+      }
+      
+      endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
+      
+      itemData = {
+        platformPageContent: JSON.stringify(data, null, 2),
+        pageType: "single",
+        url: productUrl,
         h1: data.h1 || data.title || "",
         title: data.title || "",
         description: data.description || "",
         metaImage: data.metaImage || data.featuredMedia?.url || "",
         keywords: data.keywords || data.tags?.join(", ") || "",
-        visibleText: data.visibleText || data.descriptionHtml || data.description || "",
-        breadcrumbs: breadcrumbsData,
-        categoryTagName: categories.map(cat => cat.title),
-        postID: data.id || "",
-        ...(type === 'product' && {
-          productPrice: data.productPrice || "",
-          productRegularPrice: data.productRegularPrice || "",
-          productWeight: data.variants?.edges?.[0]?.node?.weight || "",
-          productDimensions: "",
-          productAverageRating: "",
-          productRatingCount: "",
-          productStockStatus: data.totalInventory > 0 ? "In Stock" : "Out of Stock",
-          productID: data.id || "",
-          categoryID: categories[0]?.id || "",
-        })
+        visibleText:
+          data.visibleText || data.descriptionHtml || data.description || "",
+        breadcrumbs: data.tags || [],
+        productPrice: data.productPrice || "",
+        productRegularPrice: data.productRegularPrice || "",
+        productWeight: data.variants?.edges?.[0]?.node?.weight || "",
+        productDimensions: "", // Shopify doesn't have a standard dimensions field
+        productAverageRating: "", // Add if available in your data
+        productRatingCount: "", // Add if available in your data
+        productStockStatus:
+          data.totalInventory > 0 ? "In Stock" : "Out of Stock",
+        productID: data.id || "",
+        categoryID: data.collections?.edges?.[0]?.node?.id || "",
       };
 
-      // ...existing code...
-      break;
+      console.log('Posting product data to Brain Commerce:', JSON.stringify(itemData, null, 2)); // Format with indentation
+      console.log("Page content: (product)", JSON.stringify(data, null, 2)); // Format with indentation
 
-    case 'category':
-      // ...existing code...
-      const formattedCategoryContent = formatPageContent(data, 'category');
-      itemData = {
-        platformPageContent: formattedCategoryContent,
-        // ...rest of category itemData... okay 
-      };
-      break;
-  }
-  
-  // ...existing code...
-}
-
-// Helper function to fetch categories for a product
-async function fetchProductCategories(productId) {
-  const client = new shopify.api.clients.Graphql({ session });
-  const response = await client.query({
-    data: `{
-      product(id: "${productId}") {
-        collections(first: 10) {
-          edges {
-            node {
-              id
-              title
-              handle
-            }
-          }
-        }
+      const productResponse = await axios.post(endpoint, itemData, { headers });
+      if (productResponse.status === 200) {
+        user.syncedProducts.push(data.id);
       }
-    }`
-  });
-  return response.body.data.product.collections.edges.map(edge => ({
-    id: edge.node.id,
-    title: edge.node.title,
-    handle: edge.node.handle
-  }));
+      break;
+
+    default:
+      console.warn(`Unknown item type: ${type}`);
+  }
 }
 
 // Helper function to fetch top-selling categories
