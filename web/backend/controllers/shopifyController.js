@@ -317,6 +317,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       let categories = [];
       let breadcrumbsData = [];
       
+      const url = data.url || (type === 'page' 
+        ? `${storeUrl}/pages/${data.handle}`
+        : `${storeUrl}/products/${data.handle}`);
+      
       if (type === 'product') {
         categories = await fetchProductCategories(data.id);
         breadcrumbsData = categories.map(cat => ({
@@ -333,9 +337,9 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       const formattedContent = formatPageContent(data, type);
 
       itemData = {
-        platformPageContent: formattedContent, // Using formatted content instead of JSON.stringify
+        platformPageContent: formattedContent,
         pageType: "single",
-        url: type === 'page' ? pageUrl : productUrl,
+        url: url,  // Using the constructed URL
         h1: data.h1 || data.title || "",
         title: data.title || "",
         description: data.description || "",
@@ -366,7 +370,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       const formattedCategoryContent = formatPageContent(data, 'category');
       itemData = {
         platformPageContent: formattedCategoryContent,
-        // ...rest of category itemData...
+        // ...rest of category itemData... okay 
       };
       break;
   }
