@@ -203,7 +203,10 @@ export async function fetchShopifyStoreDetails(session) {
             edges {
               node {
                 id
+                handle
                 title
+                updatedAt
+                commentPolicy
                 articles(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
                   pageInfo {
                     hasNextPage
@@ -214,16 +217,24 @@ export async function fetchShopifyStoreDetails(session) {
                       id
                       title
                       handle
-                      body
+                      content
                       contentHtml
                       excerpt
                       publishedAt
+                      tags
                       image {
-                        originalSrc
+                        url
                         altText
                       }
                       author {
                         name
+                      }
+                      blog {
+                        handle
+                      }
+                      seo {
+                        title
+                        description
                       }
                     }
                   }
@@ -231,7 +242,7 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-        }`,
+        }`
       });
 
       const blogs = response.body.data.blogs.edges;
