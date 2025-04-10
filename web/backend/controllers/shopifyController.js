@@ -284,15 +284,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
     })) || []
   };
 
-  console.log('Cleaned data:', JSON.stringify(cleanedData)); // Format with indentation
+  console.log('Cleaned data:', JSON.stringify(data)); // Format with indentation
 
   switch (type) {
     case 'page':
-      if (user.syncedPages.includes(cleanedData.id)) {
-        console.warn(`Skipping already synced page with ID ${cleanedData.id}`);
-        return;
-      }
-
       const pageUrl = cleanedData.onlineStoreUrl || 
                       (cleanedData.handle ? `${storeUrl}/pages/${cleanedData.handle}` : null);
                       
@@ -323,17 +318,9 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       console.log('Page content (page):', JSON.stringify(cleanedData, null, 2)); // Format with indentation
 
       const pageResponse = await axios.post(endpoint, itemData, { headers });
-      if (pageResponse.status === 200) {
-        user.syncedPages.push(cleanedData.id);
-      }
       break;
 
     case 'category':
-      if (user.syncedCategories.includes(cleanedData.id)) {
-        console.warn(`Skipping already synced category with ID ${cleanedData.id}`);
-        return;
-      }
-
       const categoryUrl = cleanedData.onlineStoreUrl || 
                          (cleanedData.handle ? `${storeUrl}/collections/${cleanedData.handle}` : null);
                          
@@ -380,17 +367,9 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       console.log("Page content: (category)", JSON.stringify(itemData.platformPageContent, null, 2)); // Format with indentation
 
       const categoryResponse = await axios.post(endpoint, itemData, { headers });
-      if (categoryResponse.status === 200) {
-        user.syncedCategories.push(cleanedData.id);
-      }
       break;
 
     case 'product':
-      if (user.syncedProducts.includes(cleanedData.id)) {
-        console.warn(`Skipping already synced product with ID ${cleanedData.id}`);
-        return;
-      }
-
       const productUrl = cleanedData.onlineStoreUrl || 
                         (cleanedData.handle ? `${storeUrl}/products/${cleanedData.handle}` : null);
                         
@@ -432,9 +411,6 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       console.log("Page content: (product)", JSON.stringify(cleanedData)); // Format with indentation
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
-      if (productResponse.status === 200) {
-        user.syncedProducts.push(cleanedData.id);
-      }
       break;
 
     default:
