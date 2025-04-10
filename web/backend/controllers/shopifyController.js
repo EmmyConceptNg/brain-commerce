@@ -16,16 +16,27 @@ export async function fetchShopifyStoreDetails(session) {
       pages: [],
       products: [],
       categories: [],
-      totalCounts: { pages: 0, products: 0, categories: 0 },
+      blogPosts: [],
+      homepage: null,
+      totalCounts: { pages: 0, products: 0, categories: 0, blogPosts: 0 },
     };
 
-    // Fetch shop info first
+    // Fetch shop info and homepage
     const shopResponse = await client.query({
       data: `{
         shop {
           name
           myshopifyDomain
           primaryDomain { url }
+          description
+          metafields(first: 10) {
+            edges {
+              node {
+                key
+                value
+              }
+            }
+          }
         }
       }`,
     });
@@ -182,9 +193,80 @@ export async function fetchShopifyStoreDetails(session) {
       cursor = pageInfo.endCursor;
     }
 
+    // After fetching collections, fetch blog posts
+    hasNextPage = true;
+    cursor = null;
+    while (hasNextPage) {
+      const response = await client.query({
+        data: `{
+          blogs(first: 10) {
+            edges {
+              node {
+                id
+                title
+                articles(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
+                  pageInfo {
+                    hasNextPage
+                    endCursor
+                  }
+                  edges {
+                    node {
+                      id
+                      title
+                      handle
+                      content
+                      contentHtml
+                      excerpt
+                      publishedAt
+                      image {
+                        originalSrc
+                        altText
+                      }
+                      author {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }`,
+      });
+
+      const blogs = response.body.data.blogs.edges;
+      for (const blog of blogs) {
+        const { edges, pageInfo } = blog.node.articles;
+        storeDetails.blogPosts.push(
+          ...edges.map((edge) => ({
+            ...edge.node,
+            blogId: blog.node.id,
+            blogTitle: blog.node.title,
+            url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${edge.node.handle}`,
+            metaImage: edge.node.image?.originalSrc || null
+          }))
+        );
+
+        hasNextPage = pageInfo.hasNextPage;
+        cursor = pageInfo.endCursor;
+      }
+    }
+
+    // Set homepage data
+    storeDetails.homepage = {
+      url: storeDetails.storeUrl,
+      title: storeDetails.shopName,
+      description: shopResponse.body.data.shop.description || "",
+      metafields: shopResponse.body.data.shop.metafields?.edges.map(edge => ({
+        key: edge.node.key,
+        value: edge.node.value
+      })) || []
+    };
+
     storeDetails.totalCounts.pages = storeDetails.pages.length;
     storeDetails.totalCounts.products = storeDetails.products.length;
     storeDetails.totalCounts.categories = storeDetails.categories.length;
+    storeDetails.totalCounts.blogPosts = storeDetails.blogPosts.length;
 
     console.log("store details", storeDetails);
 
@@ -312,6 +394,9 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   };
 
   const { type, data } = item;
+
+
+  console.log('item :', JSON.stringify(item))
   let endpoint, itemData;
 
   // Pick only the fields we want, excluding variants
@@ -497,6 +582,41 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       console.log("Page content: (product)", JSON.stringify(cleanedData)); // Format with indentation
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
+      break;
+
+    case "blogPost":
+      const blogPostUrl = cleanedData.url;
+
+      if (!blogPostUrl) {
+        console.warn(`Skipping blog post with ID ${cleanedData.id} - no URL available`);
+        return;
+      }
+
+      endpoint = `${baseEndpoint}&url=${encodeURIComponent(blogPostUrl)}`;
+       itemData = {
+         platformPageContent: JSON.stringify(cleanedData, null, 2),
+         pageType: "single",
+         url: blogPostUrl,
+         h1: cleanedData.h1 || cleanedData.title || "",
+         title: cleanedData.title || "",
+         description: cleanedData.description || "",
+         metaImage: cleanedData.metaImage || "",
+         keywords: cleanedData.keywords || "",
+         visibleText: cleanedData.visibleText || cleanedData.body || "",
+         breadcrumbs: [
+           ...new Set([
+             ...(cleanedData.tags || []),
+             ...(cleanedData.collections?.map((col) => col.title) || []),
+           ]),
+         ],
+         blogID: cleanedData.id || "",
+       };
+
+      
+
+      console.log("Page content: (blog post)", JSON.stringify(cleanedData, null, 2));
+
+      const blogPostResponse = await axios.post(endpoint, itemData, { headers });
       break;
 
     default:
