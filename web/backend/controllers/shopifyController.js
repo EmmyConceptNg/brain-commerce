@@ -348,7 +348,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       const topSellingCategories = await fetchTopSellingCategories(cleanedData.id, session);
 
       // Get collection tags
-      const collectionTags = await getCollectionTags(cleanedData.id, session);
+      // const collectionTags = await getCollectionTags(cleanedData.id, session);
       
       itemData = {
         platformPageContent: JSON.stringify(
@@ -367,11 +367,13 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         metaImage: cleanedData.metaImage || "",
         keywords: cleanedData.keywords || "",
         visibleText: cleanedData.visibleText || cleanedData.body || "",
-        breadcrumbs: [...new Set([
-          ...(cleanedData.tags || []),
-          ...(cleanedData.collections?.map(col => col.title) || [])
-        ])],
-        categoryTagName: collectionTags || [],
+        breadcrumbs: [
+          ...new Set([
+            ...(cleanedData.tags || []),
+            ...(cleanedData.collections?.map((col) => col.title) || []),
+          ]),
+        ],
+        categoryTagName: cleanedData.tags || [],
         categoryID: cleanedData.id || "",
       };
 
