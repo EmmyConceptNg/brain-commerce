@@ -330,11 +330,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
     metaImage: data.metaImage,
     productPrice: data.productPrice,
     productRegularPrice: data.productRegularPrice,
-    // Clean up collections structure if present
-    collections:
-      data.collections?.edges?.map((edge) => ({
-        ...edge.node,
-      })) || [],
+    collections: data.collections || [] // Directly use the collections array
   };
 
   console.log("Cleaned data:", JSON.stringify(data)); // Format with indentation
