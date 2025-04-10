@@ -1,6 +1,6 @@
-import shopify from '../../shopify.js';
-import axios from 'axios';
-import User from '../models/User.js';
+import shopify from "../../shopify.js";
+import axios from "axios";
+import User from "../models/User.js";
 
 /**
  * Fetches Shopify store details
@@ -16,7 +16,7 @@ export async function fetchShopifyStoreDetails(session) {
       pages: [],
       products: [],
       categories: [],
-      totalCounts: { pages: 0, products: 0, categories: 0 }
+      totalCounts: { pages: 0, products: 0, categories: 0 },
     };
 
     // Fetch shop info first
@@ -27,17 +27,18 @@ export async function fetchShopifyStoreDetails(session) {
           myshopifyDomain
           primaryDomain { url }
         }
-      }`
+      }`,
     });
-    storeDetails.storeUrl = shopResponse.body.data.shop.primaryDomain?.url || 
-                           `https://${shopResponse.body.data.shop.myshopifyDomain}`;
+    storeDetails.storeUrl =
+      shopResponse.body.data.shop.primaryDomain?.url ||
+      `https://${shopResponse.body.data.shop.myshopifyDomain}`;
     storeDetails.shopName = shopResponse.body.data.shop.name;
 
     // Paginated fetching for products
     while (hasNextPage) {
       const response = await client.query({
         data: `{
-          products(first: 250${cursor ? `, after: "${cursor}"` : ''}) {
+          products(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
             pageInfo {
               hasNextPage
               endCursor
@@ -84,7 +85,7 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-        }`
+        }`,
       });
 
       const { edges, pageInfo } = response.body.data.products;
@@ -96,12 +97,13 @@ export async function fetchShopifyStoreDetails(session) {
           productPrice: edge.node.variants?.edges?.[0]?.node?.price || null, // Add product price
           productRegularPrice:
             edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null, // Add regular price
-          collections: edge.node.collections?.edges?.map(col => ({
-            id: col.node.id,
-            title: col.node.title,
-            handle: col.node.handle,
-            url: `${storeDetails.storeUrl}/collections/${col.node.handle}`
-          })) || []
+          collections:
+            edge.node.collections?.edges?.map((col) => ({
+              id: col.node.id,
+              title: col.node.title,
+              handle: col.node.handle,
+              url: `${storeDetails.storeUrl}/collections/${col.node.handle}`,
+            })) || [],
         }))
       );
 
@@ -116,7 +118,7 @@ export async function fetchShopifyStoreDetails(session) {
     while (hasNextPage) {
       const response = await client.query({
         data: `{
-          pages(first: 250${cursor ? `, after: "${cursor}"` : ''}) {
+          pages(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
             pageInfo {
               hasNextPage
               endCursor
@@ -130,15 +132,17 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-        }`
+        }`,
       });
-      
+
       const { edges, pageInfo } = response.body.data.pages;
-      storeDetails.pages.push(...edges.map(edge => ({
-        ...edge.node,
-        url: `${storeDetails.storeUrl}/pages/${edge.node.handle}`,
-      })));
-      
+      storeDetails.pages.push(
+        ...edges.map((edge) => ({
+          ...edge.node,
+          url: `${storeDetails.storeUrl}/pages/${edge.node.handle}`,
+        }))
+      );
+
       hasNextPage = pageInfo.hasNextPage;
       cursor = pageInfo.endCursor;
     }
@@ -149,7 +153,7 @@ export async function fetchShopifyStoreDetails(session) {
     while (hasNextPage) {
       const response = await client.query({
         data: `{
-          collections(first: 250${cursor ? `, after: "${cursor}"` : ''}) {
+          collections(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
             pageInfo {
               hasNextPage
               endCursor
@@ -163,15 +167,17 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-        }`
+        }`,
       });
-      
+
       const { edges, pageInfo } = response.body.data.collections;
-      storeDetails.categories.push(...edges.map(edge => ({
-        ...edge.node,
-        url: `${storeDetails.storeUrl}/collections/${edge.node.handle}`,
-      })));
-      
+      storeDetails.categories.push(
+        ...edges.map((edge) => ({
+          ...edge.node,
+          url: `${storeDetails.storeUrl}/collections/${edge.node.handle}`,
+        }))
+      );
+
       hasNextPage = pageInfo.hasNextPage;
       cursor = pageInfo.endCursor;
     }
@@ -197,11 +203,18 @@ export async function fetchShopifyStoreDetails(session) {
  * @param {Function} updateProgress - Function to update progress
  * @returns {Promise<void>}
  */
-export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, shop,session) {
+export async function postToBrainCommerce(
+  storeDetails,
+  apiKey,
+  storeId,
+  app,
+  shop,
+  session
+) {
   const batchSize = 50;
   const maxRetries = 3;
   const queue = [];
-  
+
   // Separate counters for each type
   let syncedPages = 0;
   let syncedProducts = 0;
@@ -209,7 +222,7 @@ export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, sh
 
   try {
     let user = await User.findOne({ shop: shop });
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error("User not found");
 
     // Update progress using the app.locals.sendProgressUpdate function
     const sendProgress = (type, synced, total) => {
@@ -218,27 +231,51 @@ export async function postToBrainCommerce(storeDetails, apiKey, storeId, app, sh
 
     // Process pages
     for (const page of storeDetails.pages) {
-      await processItem({ type: 'page', data: page }, user, storeDetails.storeUrl, apiKey, storeId, session);
+      await processItem(
+        { type: "page", data: page },
+        user,
+        storeDetails.storeUrl,
+        apiKey,
+        storeId,
+        session
+      );
       syncedPages++;
-      sendProgress('pages', syncedPages, storeDetails.pages.length);
+      sendProgress("pages", syncedPages, storeDetails.pages.length);
     }
 
     // Process products
     for (const product of storeDetails.products) {
-      await processItem({ type: 'product', data: product }, user, storeDetails.storeUrl, apiKey, storeId, session);
+      await processItem(
+        { type: "product", data: product },
+        user,
+        storeDetails.storeUrl,
+        apiKey,
+        storeId,
+        session
+      );
       syncedProducts++;
-      sendProgress('products', syncedProducts, storeDetails.products.length);
+      sendProgress("products", syncedProducts, storeDetails.products.length);
     }
 
     // Process categories
     for (const category of storeDetails.categories) {
-      await processItem({ type: 'category', data: category }, user, storeDetails.storeUrl, apiKey, storeId, session);
+      await processItem(
+        { type: "category", data: category },
+        user,
+        storeDetails.storeUrl,
+        apiKey,
+        storeId,
+        session
+      );
       syncedCategories++;
-      sendProgress('categories', syncedCategories, storeDetails.categories.length);
+      sendProgress(
+        "categories",
+        syncedCategories,
+        storeDetails.categories.length
+      );
     }
 
     await user.save();
-
   } catch (error) {
     console.error("Error in sync process:", error);
     throw error;
@@ -255,14 +292,14 @@ class RateLimit {
 
   async wait() {
     const now = Date.now();
-    this.requests = this.requests.filter(time => time > now - 1000);
-    
+    this.requests = this.requests.filter((time) => time > now - 1000);
+
     if (this.requests.length >= this.limit) {
-      await new Promise(resolve => 
+      await new Promise((resolve) =>
         setTimeout(resolve, this.requests[0] - (now - 1000))
       );
     }
-    
+
     this.requests.push(now);
   }
 }
@@ -294,25 +331,29 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
     productPrice: data.productPrice,
     productRegularPrice: data.productRegularPrice,
     // Clean up collections structure if present
-    collections: data.collections?.edges?.map(edge => ({
-      ...edge.node
-    })) || []
+    collections:
+      data.collections?.edges?.map((edge) => ({
+        ...edge.node,
+      })) || [],
   };
 
-  console.log('Cleaned data:', JSON.stringify(data)); // Format with indentation
+  console.log("Cleaned data:", JSON.stringify(data)); // Format with indentation
 
   switch (type) {
-    case 'page':
-      const pageUrl = cleanedData.onlineStoreUrl || 
-                      (cleanedData.handle ? `${storeUrl}/pages/${cleanedData.handle}` : null);
-                      
+    case "page":
+      const pageUrl =
+        cleanedData.onlineStoreUrl ||
+        (cleanedData.handle ? `${storeUrl}/pages/${cleanedData.handle}` : null);
+
       if (!pageUrl) {
-        console.warn(`Skipping page with ID ${cleanedData.id} - no URL available`);
+        console.warn(
+          `Skipping page with ID ${cleanedData.id} - no URL available`
+        );
         return;
       }
-      
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(pageUrl)}`;
-      
+
       itemData = {
         platformPageContent: JSON.stringify(cleanedData, null, 2),
         pageType: "single",
@@ -323,35 +364,45 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         metaImage: cleanedData.metaImage || "",
         keywords: cleanedData.keywords || "",
         visibleText: cleanedData.visibleText || cleanedData.body || "",
-        breadcrumbs: [...new Set([
-          ...(cleanedData.tags || []),
-          ...(cleanedData.collections?.map(col => col.title) || [])
-        ])],
+        breadcrumbs: [
+          ...new Set([
+            ...(cleanedData.tags || []),
+            ...(cleanedData.collections?.map((col) => col.title) || []),
+          ]),
+        ],
         postID: cleanedData.id || "",
       };
 
-      console.log('Page content (page):', JSON.stringify(cleanedData, null, 2)); // Format with indentation
+      console.log("Page content (page):", JSON.stringify(cleanedData, null, 2)); // Format with indentation
 
       const pageResponse = await axios.post(endpoint, itemData, { headers });
       break;
 
-    case 'category':
-      const categoryUrl = cleanedData.onlineStoreUrl || 
-                         (cleanedData.handle ? `${storeUrl}/collections/${cleanedData.handle}` : null);
-                         
+    case "category":
+      const categoryUrl =
+        cleanedData.onlineStoreUrl ||
+        (cleanedData.handle
+          ? `${storeUrl}/collections/${cleanedData.handle}`
+          : null);
+
       if (!categoryUrl) {
-        console.warn(`Skipping category with ID ${cleanedData.id} - no URL available`);
+        console.warn(
+          `Skipping category with ID ${cleanedData.id} - no URL available`
+        );
         return;
       }
-      
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
-      
+
       // Add top-selling categories to platformPageContent
-      const topSellingCategories = await fetchTopSellingCategories(cleanedData.id, session);
+      const topSellingCategories = await fetchTopSellingCategories(
+        cleanedData.id,
+        session
+      );
 
       // Get collection tags
       // const collectionTags = await getCollectionTags(cleanedData.id, session);
-      
+
       itemData = {
         platformPageContent: JSON.stringify(
           {
@@ -375,26 +426,41 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
             ...(cleanedData.collections?.map((col) => col.title) || []),
           ]),
         ],
-        categoryTagName: cleanedData.tags || [],
+        categoryTagName: [
+          ...new Set([
+            ...(cleanedData.tags || []),
+            ...(cleanedData.collections?.map((col) => col.title) || []),
+          ]),
+        ],
         categoryID: cleanedData.id || "",
       };
 
-      console.log("Page content: (category)", JSON.stringify(itemData.platformPageContent, null, 2)); // Format with indentation
+      console.log(
+        "Page content: (category)",
+        JSON.stringify(itemData.platformPageContent, null, 2)
+      ); // Format with indentation
 
-      const categoryResponse = await axios.post(endpoint, itemData, { headers });
+      const categoryResponse = await axios.post(endpoint, itemData, {
+        headers,
+      });
       break;
 
-    case 'product':
-      const productUrl = cleanedData.onlineStoreUrl || 
-                        (cleanedData.handle ? `${storeUrl}/products/${cleanedData.handle}` : null);
-                        
+    case "product":
+      const productUrl =
+        cleanedData.onlineStoreUrl ||
+        (cleanedData.handle
+          ? `${storeUrl}/products/${cleanedData.handle}`
+          : null);
+
       if (!productUrl) {
-        console.warn(`Skipping product with ID ${cleanedData.id} - no URL available`);
+        console.warn(
+          `Skipping product with ID ${cleanedData.id} - no URL available`
+        );
         return;
       }
-      
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
-      
+
       itemData = {
         platformPageContent: JSON.stringify(cleanedData, null, 2),
         pageType: "single",
@@ -402,14 +468,20 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         h1: cleanedData.h1 || cleanedData.title || "",
         title: cleanedData.title || "",
         description: cleanedData.description || "",
-        metaImage: cleanedData.metaImage || cleanedData.featuredMedia?.url || "",
+        metaImage:
+          cleanedData.metaImage || cleanedData.featuredMedia?.url || "",
         keywords: cleanedData.keywords || cleanedData.tags?.join(", ") || "",
         visibleText:
-          cleanedData.visibleText || cleanedData.descriptionHtml || cleanedData.description || "",
-        breadcrumbs: [...new Set([
-          ...(cleanedData.tags || []),
-          ...(cleanedData.collections?.map(col => col.title) || [])
-        ])],
+          cleanedData.visibleText ||
+          cleanedData.descriptionHtml ||
+          cleanedData.description ||
+          "",
+        breadcrumbs: [
+          ...new Set([
+            ...(cleanedData.tags || []),
+            ...(cleanedData.collections?.map((col) => col.title) || []),
+          ]),
+        ],
         productPrice: cleanedData.productPrice || "",
         productRegularPrice: cleanedData.productRegularPrice || "",
         productWeight: cleanedData.variants?.[0]?.weight || "",
@@ -422,7 +494,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         categoryID: cleanedData.collections?.[0]?.id || "",
       };
 
-      console.log('Posting product data to Brain Commerce:', JSON.stringify(itemData, null, 2)); // Format with indentation
+      console.log(
+        "Posting product data to Brain Commerce:",
+        JSON.stringify(itemData, null, 2)
+      ); // Format with indentation
       console.log("Page content: (product)", JSON.stringify(cleanedData)); // Format with indentation
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
@@ -465,16 +540,17 @@ async function fetchTopSellingCategories(categoryId, session) {
             }
           }
         }
-      }`
+      }`,
     });
 
-    const collections = response.body.data.collections.edges.map(edge => {
-      const products = edge.node.products.edges.map(productEdge => ({
+    const collections = response.body.data.collections.edges.map((edge) => {
+      const products = edge.node.products.edges.map((productEdge) => ({
         id: productEdge.node.id,
         title: productEdge.node.title,
         inventory: productEdge.node.totalInventory,
         price: productEdge.node.variants.edges[0]?.node.price || null,
-        regularPrice: productEdge.node.variants.edges[0]?.node.compareAtPrice || null,
+        regularPrice:
+          productEdge.node.variants.edges[0]?.node.compareAtPrice || null,
       }));
 
       return {
@@ -500,7 +576,7 @@ async function getCollectionTags(collectionId, session) {
         collection(id: "${collectionId}") {
           tags
         }
-      }`
+      }`,
     });
 
     return response.body.data.collection?.tags || [];
@@ -509,4 +585,3 @@ async function getCollectionTags(collectionId, session) {
     return [];
   }
 }
-
