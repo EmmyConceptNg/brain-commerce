@@ -309,6 +309,7 @@ export async function postToBrainCommerce(
   let syncedPages = 0;
   let syncedProducts = 0;
   let syncedCategories = 0;
+  let syncedBlogPosts = 0;
 
   try {
     let user = await User.findOne({ shop: shop });
