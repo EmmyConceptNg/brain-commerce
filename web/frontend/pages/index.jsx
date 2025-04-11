@@ -225,18 +225,28 @@ export default function HomePage() {
         })
       });
   
-      if (!response.ok) {
-        throw new Error(`Failed to activate webhooks: ${response.status}`);
-      }
-  
       const data = await response.json();
       
-      if (data.success) {
-        toast.success('Webhooks activated successfully!');
-        // Optionally verify webhooks
-        await checkWebhooks();
+      // Check both response.ok and data.results
+      if (response.ok && data.results) {
+        // Check if all webhooks were successfully activated
+        const allWebhooksSuccessful = data.results.every(result => result.success);
+        
+        if (allWebhooksSuccessful) {
+          toast.success('All webhooks activated successfully!');
+          await checkWebhooks();
+        } else {
+          // Show which webhooks failed
+          const failedWebhooks = data.results
+            .filter(result => !result.success)
+            .map(result => result.topic)
+            .join(', ');
+          
+          toast.warning(`Some webhooks failed to activate: ${failedWebhooks}`);
+        }
       } else {
-        toast.error('Failed to activate webhooks');
+        const errorMessage = data.error || 'Unknown error occurred';
+        toast.error(`Failed to activate webhooks: ${errorMessage}`);
       }
   
     } catch (error) {
