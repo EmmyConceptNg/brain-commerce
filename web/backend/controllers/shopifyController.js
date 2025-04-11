@@ -258,6 +258,7 @@ export async function fetchShopifyStoreDetails(session) {
         cursor = pageInfo.endCursor;
       }
     }
+    
 
     // Set homepage data
     storeDetails.homepage = {
@@ -319,6 +320,19 @@ export async function postToBrainCommerce(
     };
 
     console.log('store details: ', JSON.stringify(storeDetails));
+
+    // Process homepage (add this before processing other items)
+    if (storeDetails.homepage) {
+      await processItem(
+        { type: "homepage", data: storeDetails.homepage },
+        user,
+        storeDetails.storeUrl,
+        apiKey,
+        storeId,
+        session
+      );
+      sendProgress("homepage", 1, 1);
+    }
 
     // Process pages
     for (const page of storeDetails.pages) {
@@ -505,7 +519,8 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       // Add top-selling categories to platformPageContent
       const topSellingProducts = await fetchTopSellingCategories(
         cleanedData.id,
-        session
+        session,
+        storeUrl
       );
 
       // Get collection tags
@@ -646,13 +661,37 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       const blogPostResponse = await axios.post(endpoint, itemData, { headers });
       break;
 
+    case "homepage":
+      const homepageUrl = storeUrl;
+
+      endpoint = `${baseEndpoint}&url=${encodeURIComponent(homepageUrl)}`;
+
+      itemData = {
+        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        pageType: "single",
+        url: homepageUrl,
+        h1: cleanedData.h1 || cleanedData.title || "",
+        title: cleanedData.title || "",
+        description: cleanedData.description || "",
+        metaImage: cleanedData.metaImage || "",
+        keywords: cleanedData.keywords || "",
+        visibleText: cleanedData.visibleText || "",
+        metafields: cleanedData.metafields || [],
+        shopName: cleanedData.shopName || ""
+      };
+
+      console.log("Page content: (homepage)", JSON.stringify(cleanedData, null, 2));
+
+      const homepageResponse = await axios.post(endpoint, itemData, { headers });
+      break;
+
     default:
       console.warn(`Unknown item type: ${type}`);
   }
 }
 
 // Helper function to fetch top-selling categories
-async function fetchTopSellingCategories(categoryId, session) {
+async function fetchTopSellingCategories(categoryId, session, storeUrl) {
   try {
     const client = new shopify.api.clients.Graphql({ session });
 
