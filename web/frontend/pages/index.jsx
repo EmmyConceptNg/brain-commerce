@@ -202,27 +202,27 @@ export default function HomePage() {
       // Then create new webhooks
       const webhooks = [
         {
-          topic: "PRODUCTS_CREATE",
+          topic: "PRODUCTS/CREATE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-product-webhook?storeID=${storeId}`,
         },
         {
-          topic: "PRODUCTS_UPDATE",
+          topic: "PRODUCTS/UPDATE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-product-webhook?storeID=${storeId}`,
         },
         {
-          topic: "PRODUCTS_DELETE",
+          topic: "PRODUCTS/DELETE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-product-webhook?storeID=${storeId}`,
         },
         {
-          topic: "COLLECTIONS_CREATE", 
+          topic: "COLLECTIONS/CREATE", 
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-collection-webhook?storeID=${storeId}`,
         },
         {
-          topic: "COLLECTIONS_UPDATE",
+          topic: "COLLECTIONS/UPDATE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-collection-webhook?storeID=${storeId}`,
         },
         {
-          topic: "COLLECTIONS_DELETE",
+          topic: "COLLECTIONS/DELETE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-collection-webhook?storeID=${storeId}`,
         }
       ];
@@ -242,7 +242,8 @@ export default function HomePage() {
       });
 
       const data = await createResponse.json();
-      
+      console.log('Webhook activation response:', data); // Add this line for debugging
+
       if (createResponse.ok && data.results) {
         const allWebhooksSuccessful = data.results.every(result => result.success);
         
@@ -252,10 +253,18 @@ export default function HomePage() {
         } else {
           const failedWebhooks = data.results
             .filter(result => !result.success)
-            .map(result => result.topic)
-            .join(', ');
+            .map(result => ({
+              topic: result.topic,
+              error: result.error || 'Unknown error'
+            }));
           
-          toast.warning(`Some webhooks failed to activate: ${failedWebhooks}`);
+          console.error('Failed webhooks:', failedWebhooks); // Add this line for debugging
+          
+          const failedWebhookMessages = failedWebhooks
+            .map(webhook => `${webhook.topic}: ${webhook.error}`)
+            .join('\n');
+          
+          toast.warning(`Some webhooks failed to activate:\n${failedWebhookMessages}`);
         }
       } else {
         const errorMessage = data.error || 'Unknown error occurred';

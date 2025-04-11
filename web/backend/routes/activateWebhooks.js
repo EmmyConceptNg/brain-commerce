@@ -9,36 +9,32 @@ router.post("/", async (req, res) => {
     const session = res.locals.shopify.session;
 
     if (!session) {
-      return res.status(401).json({ error: "Unauthorized - Missing Session" });
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - Missing Session",
+      });
     }
 
     const client = new shopify.api.clients.Graphql({ session });
     const results = [];
 
     for (const webhook of webhooks) {
-      const mutation = `
-        mutation CreateWebhookSubscription($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
-          webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
-            webhookSubscription {
-              id
-              endpoint {
-                ... on WebhookHttpEndpoint {
-                  callbackUrl
-                }
-              }
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }
-      `;
-
       try {
         const response = await client.query({
           data: {
-            query: mutation,
+            query: `
+              mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+                webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+                  webhookSubscription {
+                    id
+                  }
+                  userErrors {
+                    field
+                    message
+                  }
+                }
+              }
+            `,
             variables: {
               topic: webhook.topic,
               webhookSubscription: {
@@ -49,13 +45,27 @@ router.post("/", async (req, res) => {
           },
         });
 
-        results.push({
-          topic: webhook.topic,
-          success:
-            !response.body.data.webhookSubscriptionCreate.userErrors.length,
-          errors: response.body.data.webhookSubscriptionCreate.userErrors,
-        });
+        const { webhookSubscriptionCreate } = response.body.data;
+
+        if (webhookSubscriptionCreate.userErrors.length > 0) {
+          console.error(
+            "Webhook creation errors:",
+            webhookSubscriptionCreate.userErrors
+          );
+          results.push({
+            topic: webhook.topic,
+            success: false,
+            error: webhookSubscriptionCreate.userErrors[0].message,
+          });
+        } else {
+          results.push({
+            topic: webhook.topic,
+            success: true,
+            id: webhookSubscriptionCreate.webhookSubscription.id,
+          });
+        }
       } catch (error) {
+        console.error(`Error creating webhook ${webhook.topic}:`, error);
         results.push({
           topic: webhook.topic,
           success: false,
@@ -64,13 +74,16 @@ router.post("/", async (req, res) => {
       }
     }
 
-    const success = results.every((result) => result.success);
-    res.json({ success, results });
+    res.json({
+      success: results.some((result) => result.success),
+      results,
+    });
   } catch (error) {
-    console.error("Error activating webhooks:", error);
+    console.error("Error in activate-webhooks:", error);
     res.status(500).json({
       success: false,
       error: error.message,
+      results: [],
     });
   }
 });
