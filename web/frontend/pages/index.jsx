@@ -179,6 +179,72 @@ export default function HomePage() {
     setSyncing(false);
   };
 
+  const handleActivateWebhooks = async () => {
+    try {
+      if (!validateFields()) return;
+      
+      const host = getShopifyHost();
+      const webhooks = [
+        {
+          topic: "PRODUCTS_CREATE",
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-product-webhook?storeID=${storeId}`,
+        },
+        {
+          topic: "PRODUCTS_UPDATE",
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-product-webhook?storeID=${storeId}`,
+        },
+        {
+          topic: "PRODUCTS_DELETE",
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-product-webhook?storeID=${storeId}`,
+        },
+        {
+          topic: "COLLECTIONS_CREATE", 
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-collection-webhook?storeID=${storeId}`,
+        },
+        {
+          topic: "COLLECTIONS_UPDATE",
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-update-collection-webhook?storeID=${storeId}`,
+        },
+        {
+          topic: "COLLECTIONS_DELETE",
+          callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-collection-webhook?storeID=${storeId}`,
+        }
+      ];
+  
+      const response = await fetch('/api/v1/activate-webhooks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          webhooks,
+          apiKey,
+          storeId,
+          host
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to activate webhooks: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Webhooks activated successfully!');
+        // Optionally verify webhooks
+        await checkWebhooks();
+      } else {
+        toast.error('Failed to activate webhooks');
+      }
+  
+    } catch (error) {
+      console.error('Error activating webhooks:', error);
+      toast.error('Error activating webhooks: ' + error.message);
+    }
+  };
+
   useEffect(() => {
     let eventSource;
     
@@ -286,29 +352,20 @@ export default function HomePage() {
                 >
                   Sync
                 </Button>
-                {/* <Button
-                  onClick={checkWebhooks}
+                <Button
+                  onClick={handleActivateWebhooks}
                   variant="primary"
-                  tone="success"
+                  tone="emphasis"
                   size="large"
-                  disabled={syncing}
+                  disabled={syncing || !apiKey || !storeId}
                 >
-                  check webhooks
-                </Button> */}
+                  Activate Webhooks
+                </Button>
                 <Link url="https://www.braincommerce.io/entry/signup" external>
                   Create an account on Brain Commerce
                 </Link>
               </InlineStack>
-              {/* {syncing && (
-                <Card sectioned>
-                  <BlockStack gap="400">
-                    <Text variant="headingMd">Sync Progress</Text>
-                    {renderProgressBar('pages')}
-                    {renderProgressBar('products')}
-                    {renderProgressBar('categories')}
-                  </BlockStack>
-                </Card>
-              )} */}
+             
               {syncing && (
                 <Box padding="4">
                   <Spinner accessibilityLabel="Syncing" size="large" />
@@ -318,6 +375,52 @@ export default function HomePage() {
                   </Text>
                 </Box>
               )}
+            </BlockStack>
+          </Card>
+        </Layout.Section>
+        <Layout.Section>
+          <Card sectioned>
+            <BlockStack gap="400">
+              <Text variant="headingMd" as="h2">
+                Integration Steps
+              </Text>
+              <Text as="p">
+                Follow these steps to complete the Brain Commerce integration:
+              </Text>
+              <BlockStack gap="300">
+                <Text as="p">1. Add this code to your theme.liquid file just before the closing &lt;/body&gt; tag:</Text>
+                <Box
+                  background="bg-surface-secondary"
+                  padding="400"
+                  borderWidth="025"
+                  borderRadius="200"
+                >
+                  <InlineStack align="space-between">
+                    <code>{`<script async src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc" storeid="${storeId}"></script>`}</code>
+                    <Button
+                      variant="plain"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `<script async src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc" storeid="${storeId}"></script>`
+                        );
+                        toast.success('Code copied to clipboard!');
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </InlineStack>
+                </Box>
+                <Text as="p">2. To edit your theme:</Text>
+                <BlockStack gap="200">
+                  <Text as="p">• Go to Online Store → Themes in your Shopify admin</Text>
+                  <Text as="p">• Click "Customize" on your active theme</Text>
+                  <Text as="p">• Click "Edit code" in the theme editor</Text>
+                  <Text as="p">• Open the theme.liquid file</Text>
+                  <Text as="p">• Paste the code just before the closing &lt;/body&gt; tag</Text>
+                  <Text as="p">• Save the changes</Text>
+                </BlockStack>
+                <Text as="p">3. Click the "Activate Webhooks" button above to enable real-time updates</Text>
+              </BlockStack>
             </BlockStack>
           </Card>
         </Layout.Section>

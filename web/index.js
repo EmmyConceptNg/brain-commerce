@@ -15,6 +15,7 @@ import validateRoutes from "./backend/routes/validateRoutes.js";
 import cors from 'cors'
 import shopifyRoutes from "./backend/routes/shopifyRoutes.js";
 import adminRoutes from "./backend/routes/admin.js";
+import webhookRoutes from "./backend/routes/activateWebhooks.js";
 
 // Add these lines after imports to define __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -159,6 +160,11 @@ app.use(
 );
 
 app.use("/api/v1/admin", shopify.validateAuthenticatedSession(), adminRoutes);
+app.use(
+  "/api/v1/activate-webhooks",
+  shopify.validateAuthenticatedSession(),
+  webhookRoutes
+);
 
 app.get("/debug", (req, res) => {
   console.log("Shopify Session:", res.locals.shopify);
