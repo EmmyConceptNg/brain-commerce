@@ -16,31 +16,68 @@ router.post("/", async (req, res) => {
     }
 
     const client = new shopify.api.clients.Graphql({ session });
-    const results = [];
 
+    // First, get and delete existing webhooks
+    const getWebhooksResponse = await client.request({
+      query: `
+        query {
+          webhookSubscriptions(first: 100) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      `,
+    });
+
+    const existingWebhooks =
+      getWebhooksResponse.body.data.webhookSubscriptions.edges;
+
+    // Delete all existing webhooks
+    for (const { node } of existingWebhooks) {
+      await client.request({
+        query: `
+          mutation webhookSubscriptionDelete($id: ID!) {
+            webhookSubscriptionDelete(id: $id) {
+              deletedWebhookSubscriptionId
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `,
+        variables: {
+          id: node.id,
+        },
+      });
+    }
+
+    // Create new webhooks
+    const results = [];
     for (const webhook of webhooks) {
       try {
-        const response = await client.query({
-          data: {
-            query: `
-              mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
-                webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
-                  webhookSubscription {
-                    id
-                  }
-                  userErrors {
-                    field
-                    message
-                  }
+        const response = await client.request({
+          query: `
+            mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+              webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+                webhookSubscription {
+                  id
+                }
+                userErrors {
+                  field
+                  message
                 }
               }
-            `,
-            variables: {
-              topic: webhook.topic,
-              webhookSubscription: {
-                callbackUrl: webhook.callbackUrl,
-                format: "JSON",
-              },
+            }
+          `,
+          variables: {
+            topic: webhook.topic,
+            webhookSubscription: {
+              callbackUrl: webhook.callbackUrl,
+              format: "JSON",
             },
           },
         });
@@ -48,10 +85,6 @@ router.post("/", async (req, res) => {
         const { webhookSubscriptionCreate } = response.body.data;
 
         if (webhookSubscriptionCreate.userErrors.length > 0) {
-          console.error(
-            "Webhook creation errors:",
-            webhookSubscriptionCreate.userErrors
-          );
           results.push({
             topic: webhook.topic,
             success: false,
@@ -65,7 +98,6 @@ router.post("/", async (req, res) => {
           });
         }
       } catch (error) {
-        console.error(`Error creating webhook ${webhook.topic}:`, error);
         results.push({
           topic: webhook.topic,
           success: false,
@@ -74,12 +106,17 @@ router.post("/", async (req, res) => {
       }
     }
 
+    const allSuccessful = results.every((result) => result.success);
+
     res.json({
-      success: results.some((result) => result.success),
+      success: allSuccessful,
       results,
+      message: allSuccessful
+        ? "All webhooks activated successfully"
+        : "Some webhooks failed to activate",
     });
   } catch (error) {
-    console.error("Error in activate-webhooks:", error);
+    console.error("Error in webhook activation:", error);
     res.status(500).json({
       success: false,
       error: error.message,
