@@ -318,6 +318,8 @@ export async function postToBrainCommerce(
       app.locals.sendProgressUpdate(type, synced, total);
     };
 
+    console.log('store details: ', JSON.stringify(storeDetails));
+
     // Process pages
     for (const page of storeDetails.pages) {
       await processItem(
@@ -403,7 +405,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   const { type, data } = item;
 
 
-  console.log('item :', JSON.stringify(item))
+  
   let endpoint, itemData;
 
   // Pick only the fields we want, excluding variants
@@ -483,7 +485,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
 
       // Add top-selling categories to platformPageContent
-      const topSellingCategories = await fetchTopSellingCategories(
+      const topSellingProducts = await fetchTopSellingCategories(
         cleanedData.id,
         session
       );
@@ -495,7 +497,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         platformPageContent: JSON.stringify(
           {
             ...cleanedData,
-            topSellingCategories,
+            topSellingProducts,
           },
           null,
           2
