@@ -366,6 +366,24 @@ export async function postToBrainCommerce(
       );
     }
 
+    // Process blogs
+    for (const blogPost of storeDetails.blogPosts) {
+      await processItem(
+        { type: "blogPost", data: blogPost },
+        user,
+        storeDetails.storeUrl,
+        apiKey,
+        storeId,
+        session
+      );
+      syncedBlogPosts++;
+      sendProgress(
+        "blogPosts",
+        syncedBlogPosts,
+        storeDetails.blogPosts.length
+      );
+    }
+
     await user.save();
   } catch (error) {
     console.error("Error in sync process:", error);
@@ -664,16 +682,7 @@ async function fetchTopSellingCategories(categoryId, session) {
                     currencyCode
                   }
                 }
-                compareAtPriceRange {
-                  minVariantPrice {
-                    amount
-                    currencyCode
-                  }
-                  maxVariantPrice {
-                    amount
-                    currencyCode
-                  }
-                }
+                
               }
             }
           }
@@ -693,7 +702,6 @@ async function fetchTopSellingCategories(categoryId, session) {
       image: node.featuredImage?.originalSrc || null,
       imageAlt: node.featuredImage?.altText || null,
       price: node.priceRange.minVariantPrice.amount,
-      compareAtPrice: node.compareAtPriceRange.minVariantPrice.amount,
       currencyCode: node.priceRange.minVariantPrice.currencyCode
     }));
 
