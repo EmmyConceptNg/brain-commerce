@@ -451,7 +451,6 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
     tags: data.tags,
     handle: data.handle,
     totalInventory: data.totalInventory,
-    inStock: data.totalInventory > 0,
     featuredMedia: data.featuredMedia,
     url: data.url,
     metaImage: data.metaImage,
@@ -460,7 +459,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
     collections: data.collections || [] // Directly use the collections array
   };
 
-  console.log("Cleaned data:", JSON.stringify(data)); // Format with indentation
+if(type === "product") {
+  cleanedData.inStock = data.totalInventory > 0 ? "In Stock" : "Out of Stock";
+}
+
 
   switch (type) {
     case "page":
