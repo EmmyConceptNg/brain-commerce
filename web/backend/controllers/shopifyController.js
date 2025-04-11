@@ -221,6 +221,8 @@ export async function fetchShopifyStoreDetails(session) {
                       createdAt
                       publishedAt
                       tags
+                      content
+                      contentHtml
                       image {
                         url
                         altText
@@ -637,26 +639,28 @@ if(type === "product") {
       }
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(blogPostUrl)}`;
-       itemData = {
-         platformPageContent: JSON.stringify(cleanedData, null, 2),
-         pageType: "single",
-         url: blogPostUrl,
-         h1: cleanedData.h1 || cleanedData.title || "",
-         title: cleanedData.title || "",
-         description: cleanedData.description || "",
-         metaImage: cleanedData.metaImage || "",
-         keywords: cleanedData.keywords || "",
-         visibleText: cleanedData.visibleText || cleanedData.body || "",
-         breadcrumbs: [
-           ...new Set([
-             ...(cleanedData.tags || []),
-             ...(cleanedData.collections?.map((col) => col.title) || []),
-           ]),
-         ],
-         blogID: cleanedData.id || "",
-       };
-
-      
+      itemData = {
+        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        pageType: "single",
+        url: blogPostUrl,
+        h1: cleanedData.h1 || cleanedData.title || "",
+        title: cleanedData.title || "",
+        // Use contentHtml or content for the description field
+        description: data.contentHtml || data.content || "",
+        metaImage: cleanedData.metaImage || "",
+        keywords: cleanedData.keywords || data.tags?.join(", ") || "",
+        visibleText: data.contentHtml || data.content || "",
+        breadcrumbs: [
+          ...new Set([
+            ...(cleanedData.tags || []),
+            cleanedData.blogTitle || "",
+          ]),
+        ],
+        blogID: cleanedData.id || "",
+        author: data.author?.name || "",
+        publishedAt: data.publishedAt || "",
+        blogTitle: cleanedData.blogTitle || ""
+      };
 
       console.log("Page content: (blog post)", JSON.stringify(cleanedData, null, 2));
 
