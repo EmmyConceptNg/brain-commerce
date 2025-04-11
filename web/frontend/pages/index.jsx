@@ -184,6 +184,22 @@ export default function HomePage() {
       if (!validateFields()) return;
       
       const host = getShopifyHost();
+      
+      // First, delete existing webhooks
+      const deleteResponse = await fetch('/api/v1/delete-webhooks', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ host })
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error('Failed to delete existing webhooks');
+      }
+
+      // Then create new webhooks
       const webhooks = [
         {
           topic: "PRODUCTS_CREATE",
@@ -210,8 +226,8 @@ export default function HomePage() {
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-collection-webhook?storeID=${storeId}`,
         }
       ];
-  
-      const response = await fetch('/api/v1/activate-webhooks', {
+
+      const createResponse = await fetch('/api/v1/activate-webhooks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -224,19 +240,16 @@ export default function HomePage() {
           host
         })
       });
-  
-      const data = await response.json();
+
+      const data = await createResponse.json();
       
-      // Check both response.ok and data.results
-      if (response.ok && data.results) {
-        // Check if all webhooks were successfully activated
+      if (createResponse.ok && data.results) {
         const allWebhooksSuccessful = data.results.every(result => result.success);
         
         if (allWebhooksSuccessful) {
           toast.success('All webhooks activated successfully!');
           await checkWebhooks();
         } else {
-          // Show which webhooks failed
           const failedWebhooks = data.results
             .filter(result => !result.success)
             .map(result => result.topic)
@@ -248,7 +261,7 @@ export default function HomePage() {
         const errorMessage = data.error || 'Unknown error occurred';
         toast.error(`Failed to activate webhooks: ${errorMessage}`);
       }
-  
+
     } catch (error) {
       console.error('Error activating webhooks:', error);
       toast.error('Error activating webhooks: ' + error.message);
