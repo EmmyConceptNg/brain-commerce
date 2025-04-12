@@ -44,7 +44,6 @@ router.post("/", async (req, res) => {
   }`,
     });
 
-
     const existingWebhooks =
       getWebhooksResponse.body.data.webhookSubscriptions.edges;
 
@@ -60,31 +59,52 @@ router.post("/", async (req, res) => {
         );
 
         if (existingWebhook) {
+          console.log("Updating existing webhook:", existingWebhook.node.id);
+
           // Update existing webhook
-          const response = await client.request({
-            query: `
-              mutation webhookSubscriptionUpdate($id: ID!, $webhookSubscription: WebhookSubscriptionInput!) {
-                webhookSubscriptionUpdate(id: $id, webhookSubscription: $webhookSubscription) {
-                  webhookSubscription {
-                    id
-                  }
-                  userErrors {
-                    field
-                    message
-                  }
-                }
-              }
-            `,
-            variables: {
-              id: existingWebhook.node.id,
-              webhookSubscription: {
-                callbackUrl: webhook.callbackUrl,
-                format: "JSON",
+          const response = await client.query({
+            data: {
+              query: `mutation WebhookSubscriptionUpdate($id: ID!, $webhookSubscription: WebhookSubscriptionInput!) {
+      webhookSubscriptionUpdate(id: $id, webhookSubscription: $webhookSubscription) {
+        userErrors {
+          field
+          message
+        }
+        webhookSubscription {
+          id
+          topic
+          endpoint {
+            __typename
+            ... on WebhookHttpEndpoint {
+              callbackUrl
+            }
+            ... on WebhookEventBridgeEndpoint {
+              arn
+            }
+            ... on WebhookPubSubEndpoint {
+              pubSubProject
+              pubSubTopic
+            }
+          }
+          apiVersion {
+            handle
+          }
+          format
+        }
+      }
+    }`,
+              variables: {
+                id: existingWebhook.node.id,
+                webhookSubscription: {
+                  callbackUrl: webhook.callbackUrl,
+                  format: "JSON",
+                },
               },
             },
           });
 
           const { webhookSubscriptionUpdate } = response.body.data;
+          console.log("Webhook Subscription Update Response:", webhookSubscriptionUpdate);
 
           if (webhookSubscriptionUpdate.userErrors.length > 0) {
             results.push({
@@ -103,30 +123,41 @@ router.post("/", async (req, res) => {
           }
         } else {
           // Create new webhook
-          const response = await client.request({
-            query: `
-              mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
-                webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
-                  webhookSubscription {
-                    id
-                  }
-                  userErrors {
-                    field
-                    message
-                  }
-                }
-              }
-            `,
-            variables: {
-              topic: webhook.topic,
-              webhookSubscription: {
-                callbackUrl: webhook.callbackUrl,
-                format: "JSON",
+          const response = await client.query({
+            data: {
+              query: `mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+      webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+        webhookSubscription {
+          id
+          topic
+          filter
+          format
+          endpoint {
+            __typename
+            ... on WebhookHttpEndpoint {
+              callbackUrl
+            }
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }`,
+              variables: {
+                topic: webhook.topic,
+                webhookSubscription: {
+                  callbackUrl: webhook.callbackUrl,
+                  format: "JSON",
+                },
               },
             },
           });
 
+
           const { webhookSubscriptionCreate } = response.body.data;
+          console.log("Webhook Subscription Create Response:", webhookSubscriptionCreate);
 
           if (webhookSubscriptionCreate.userErrors.length > 0) {
             results.push({
