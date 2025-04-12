@@ -39,6 +39,8 @@ router.post("/", async (req, res) => {
     });
 
     const existingWebhooks = getWebhooksResponse.body.data.webhookSubscriptions.edges;
+
+    console.log("Existing Webhooks:", existingWebhooks);
     const results = [];
 
     // Process each webhook
@@ -75,6 +77,8 @@ router.post("/", async (req, res) => {
           });
 
           const { webhookSubscriptionUpdate } = response.body.data;
+
+          
 
           if (webhookSubscriptionUpdate.userErrors.length > 0) {
             results.push({
