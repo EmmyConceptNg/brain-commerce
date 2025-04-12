@@ -196,70 +196,62 @@ export async function fetchShopifyStoreDetails(session) {
     // After fetching collections, fetch blog posts
     hasNextPage = true;
     cursor = null;
-    while (hasNextPage) {
-      const response = await client.query({
-        data: `{
-          blogs(first: 10) {
-            edges {
-              node {
-                id
-                handle
-                title
-                updatedAt
-                commentPolicy
-                articles(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
-                  pageInfo {
-                    hasNextPage
-                    endCursor
-                  }
-                  edges {
-                    node {
-                      id
-                      title
+
+    const response = await client.query({
+      data: `{
+        blogs(first: 10) {
+          edges {
+            node {
+              id
+              handle
+              title
+              articles(first: 250) {
+                edges {
+                  node {
+                    id
+                    title
+                    handle
+                    contentHtml
+                    excerpt
+                    createdAt
+                    publishedAt
+                    tags
+                    image {
+                      url
+                      altText
+                    }
+                    author {
+                      name
+                    }
+                    blog {
                       handle
-                      body
-                      createdAt
-                      publishedAt
-                      tags
-                      contentHtml
-                      image {
-                        url
-                        altText
-                      }
-                      author {
-                        name
-                      }
-                      blog {
-                        handle
-                      }
-                     
                     }
                   }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
                 }
               }
             }
           }
-        }`,
-      });
+        }
+      }`
+    });
 
-      const blogs = response.body.data.blogs.edges;
-      for (const blog of blogs) {
-        const { edges, pageInfo } = blog.node.articles;
-        storeDetails.blogPosts.push(
-          ...edges.map((edge) => ({
-            ...edge.node,
-            blogId: blog.node.id,
-            blogTitle: blog.node.title,
-            url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${edge.node.handle}`,
-            metaImage: edge.node.image?.originalSrc || null
-          }))
-        );
-
-        hasNextPage = pageInfo.hasNextPage;
-        cursor = pageInfo.endCursor;
-      }
+    const blogs = response.body.data.blogs.edges;
+    for (const blog of blogs) {
+      const blogArticles = blog.node.articles.edges;
+      storeDetails.blogPosts.push(
+        ...blogArticles.map((article) => ({
+          ...article.node,
+          blogId: blog.node.id,
+          blogTitle: blog.node.title,
+          url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
+          metaImage: article.node.image?.url || null
+        }))
+      );
     }
-    
 
     // Set homepage data
     storeDetails.homepage = {
@@ -644,11 +636,10 @@ if(type === "product") {
         url: blogPostUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
         title: cleanedData.title || "",
-        // Use contentHtml or content for the description field
-        description: data.contentHtml || data.content || "",
+        description: data.contentHtml || data.excerpt || "",
         metaImage: cleanedData.metaImage || "",
         keywords: cleanedData.keywords || data.tags?.join(", ") || "",
-        visibleText: data.contentHtml || data.content || "",
+        visibleText: data.contentHtml || "",
         breadcrumbs: [
           ...new Set([
             ...(cleanedData.tags || []),
