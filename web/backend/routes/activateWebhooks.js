@@ -18,27 +18,35 @@ router.post("/", async (req, res) => {
     const client = new shopify.api.clients.Graphql({ session });
 
     // First, get existing webhooks
-    const getWebhooksResponse = await client.request({
-      query: `
-        query {
-          webhookSubscriptions(first: 100) {
-            edges {
-              node {
-                id
-                topic
-                endpoint {
-                  ... on WebhookHttpEndpoint {
-                    callbackUrl
-                  }
-                }
-              }
+    const getWebhooksResponse = await client.query({
+      data: `query {
+    webhookSubscriptions(first: 2) {
+      edges {
+        node {
+          id
+          topic
+          endpoint {
+            __typename
+            ... on WebhookHttpEndpoint {
+              callbackUrl
+            }
+            ... on WebhookEventBridgeEndpoint {
+              arn
+            }
+            ... on WebhookPubSubEndpoint {
+              pubSubProject
+              pubSubTopic
             }
           }
         }
-      `,
+      }
+    }
+  }`,
     });
 
-    const existingWebhooks = getWebhooksResponse.body.data.webhookSubscriptions.edges;
+
+    const existingWebhooks =
+      getWebhooksResponse.body.data.webhookSubscriptions.edges;
 
     console.log("Existing Webhooks:", existingWebhooks);
     const results = [];
@@ -78,21 +86,19 @@ router.post("/", async (req, res) => {
 
           const { webhookSubscriptionUpdate } = response.body.data;
 
-          
-
           if (webhookSubscriptionUpdate.userErrors.length > 0) {
             results.push({
               topic: webhook.topic,
               success: false,
               error: webhookSubscriptionUpdate.userErrors[0].message,
-              action: "update"
+              action: "update",
             });
           } else {
             results.push({
               topic: webhook.topic,
               success: true,
               id: webhookSubscriptionUpdate.webhookSubscription.id,
-              action: "update"
+              action: "update",
             });
           }
         } else {
@@ -127,14 +133,14 @@ router.post("/", async (req, res) => {
               topic: webhook.topic,
               success: false,
               error: webhookSubscriptionCreate.userErrors[0].message,
-              action: "create"
+              action: "create",
             });
           } else {
             results.push({
               topic: webhook.topic,
               success: true,
               id: webhookSubscriptionCreate.webhookSubscription.id,
-              action: "create"
+              action: "create",
             });
           }
         }
@@ -143,7 +149,7 @@ router.post("/", async (req, res) => {
           topic: webhook.topic,
           success: false,
           error: error.message,
-          action: "error"
+          action: "error",
         });
       }
     }
