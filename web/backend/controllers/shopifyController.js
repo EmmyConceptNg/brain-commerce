@@ -199,47 +199,28 @@ export async function fetchShopifyStoreDetails(session) {
 
     const response = await client.request({
       query: `{
-        blogs(first: 10) {
+  blogs(first: 1) {
+    edges {
+      node {
+        id
+        handle
+        title
+        articles(first: 1) {
           edges {
             node {
               id
-              handle
               title
-              articles(first: 250) {
-                edges {
-                  node {
-                    id
-                    title
-                    handle
-                    content
-                    excerpt
-                    publishedAt
-                    image {
-                      url
-                      altText
-                    }
-                    blog {
-                      handle
-                    }
-                    authorV2 {
-                      name
-                    }
-                    seo {
-                      title
-                      description
-                    }
-                    tags
-                  }
-                }
-                pageInfo {
-                  hasNextPage
-                  endCursor
-                }
-              }
+              content
+              handle
+              publishedAt
             }
           }
         }
-      }`
+      }
+    }
+  }
+}
+`,
     });
 
     const blogs = response.body.data.blogs.edges;
