@@ -197,8 +197,8 @@ export async function fetchShopifyStoreDetails(session) {
     hasNextPage = true;
     cursor = null;
 
-    const response = await client.query({
-      data: `{
+    const response = await client.request({
+      query: `{
         blogs(first: 10) {
           edges {
             node {
@@ -211,21 +211,24 @@ export async function fetchShopifyStoreDetails(session) {
                     id
                     title
                     handle
-                    contentHtml
+                    content
                     excerpt
-                    createdAt
                     publishedAt
-                    tags
                     image {
                       url
                       altText
                     }
-                    author {
-                      name
-                    }
                     blog {
                       handle
                     }
+                    authorV2 {
+                      name
+                    }
+                    seo {
+                      title
+                      description
+                    }
+                    tags
                   }
                 }
                 pageInfo {
@@ -244,11 +247,20 @@ export async function fetchShopifyStoreDetails(session) {
       const blogArticles = blog.node.articles.edges;
       storeDetails.blogPosts.push(
         ...blogArticles.map((article) => ({
-          ...article.node,
+          id: article.node.id,
+          title: article.node.title,
+          handle: article.node.handle,
+          content: article.node.content,
+          excerpt: article.node.excerpt,
+          publishedAt: article.node.publishedAt,
+          tags: article.node.tags,
+          seo: article.node.seo,
           blogId: blog.node.id,
           blogTitle: blog.node.title,
+          blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-          metaImage: article.node.image?.url || null
+          metaImage: article.node.image?.url || null,
+          author: article.node.authorV2?.name || ""
         }))
       );
     }
