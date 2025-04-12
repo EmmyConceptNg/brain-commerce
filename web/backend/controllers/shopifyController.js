@@ -211,7 +211,7 @@ export async function fetchShopifyStoreDetails(session) {
                 id
                 title
                 handle
-                contentHtml
+                
                 excerpt
                 publishedAt
                 image {
