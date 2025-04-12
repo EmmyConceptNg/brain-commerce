@@ -199,27 +199,44 @@ export async function fetchShopifyStoreDetails(session) {
 
     const response = await client.request({
       query: `{
-  blogs(first: 1) {
+  blogs(first: 2) {
     edges {
       node {
         id
         handle
         title
-        articles(first: 1) {
+        articles(first: 5) {
           edges {
             node {
               id
               title
-              content
               handle
+              contentHtml
+              excerpt
               publishedAt
+              image {
+                url
+                altText
+              }
+              blog {
+                handle
+              }
+              authorV2 {
+                name
+              }
+              tags
             }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
           }
         }
       }
     }
   }
 }
+
 `,
     });
 
