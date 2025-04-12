@@ -221,7 +221,6 @@ export async function fetchShopifyStoreDetails(session) {
                       createdAt
                       publishedAt
                       tags
-                      content
                       contentHtml
                       image {
                         url
