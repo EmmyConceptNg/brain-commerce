@@ -211,20 +211,6 @@ export async function fetchShopifyStoreDetails(session) {
                 id
                 title
                 handle
-                
-                excerpt
-                publishedAt
-                image {
-                  url
-                  altText
-                }
-                blog {
-                  handle
-                }
-                authorV2 {
-                  name
-                }
-                tags
               }
             }
             pageInfo {
