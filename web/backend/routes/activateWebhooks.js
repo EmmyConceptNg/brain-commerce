@@ -35,9 +35,11 @@ router.post("/", async (req, res) => {
     const existingWebhooks =
       getWebhooksResponse.body.data.webhookSubscriptions.edges;
 
+      console.log('existingWebhooks', existingWebhooks);
+
     // Delete all existing webhooks
     for (const { node } of existingWebhooks) {
-      await client.request({
+      const deleteWebhooks = await client.request({
         query: `
           mutation webhookSubscriptionDelete($id: ID!) {
             webhookSubscriptionDelete(id: $id) {
@@ -53,6 +55,15 @@ router.post("/", async (req, res) => {
           id: node.id,
         },
       });
+
+      const { webhookSubscriptionDelete } = deleteWebhooks.body.data;
+      if (webhookSubscriptionDelete.userErrors.length > 0) {
+        console.error(
+          `Failed to delete webhook ${node.id}: ${webhookSubscriptionDelete.userErrors[0].message}`
+        );
+      } else {
+        console.log(`Deleted webhook ${node.id}`);
+      }
     }
 
     // Create new webhooks
