@@ -45,6 +45,8 @@ export default function HomePage() {
   const [errors, setErrors] = useState({ apiKey: "", storeId: "" });
   const [host, setHost] = useState(""); // Add this line
 
+  const [activating, setActivating] = useState(false);
+
   useEffect(() => {
     setApiKey(apiKeyFromState);
     setStoreId(storeIdFromState);
@@ -182,22 +184,10 @@ export default function HomePage() {
   const handleActivateWebhooks = async () => {
     try {
       if (!validateFields()) return;
+
+      setActivating(true)
       
       const host = getShopifyHost();
-      
-      // First, delete existing webhooks
-      const deleteResponse = await fetch('/api/v1/delete-webhooks', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ host })
-      });
-
-      if (!deleteResponse.ok) {
-        throw new Error('Failed to delete existing webhooks');
-      }
 
       // Then create new webhooks
       const webhooks = [
@@ -274,6 +264,8 @@ export default function HomePage() {
     } catch (error) {
       console.error('Error activating webhooks:', error);
       toast.error('Error activating webhooks: ' + error.message);
+    }finally {
+      setActivating(false);
     }
   };
 
@@ -389,7 +381,7 @@ export default function HomePage() {
                   variant="primary"
                   tone="emphasis"
                   size="large"
-                  disabled={syncing || !apiKey || !storeId}
+                  disabled={activating || !apiKey || !storeId}
                 >
                   Activate Webhooks
                 </Button>
