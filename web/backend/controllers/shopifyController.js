@@ -198,46 +198,44 @@ export async function fetchShopifyStoreDetails(session) {
     cursor = null;
 
     const response = await client.query({
-      query: `{
-  blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
-    edges {
-      node {
-        id
-        handle
-        title
-        articles(first: 5) {
+      data: `{
+        blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
           edges {
             node {
               id
-              title
               handle
-              contentHtml
-              excerpt
-              publishedAt
-              image {
-                url
-                altText
+              title
+              articles(first: 5) {
+                edges {
+                  node {
+                    id
+                    title
+                    handle
+                    contentHtml
+                    excerpt
+                    publishedAt
+                    image {
+                      url
+                      altText
+                    }
+                    blog {
+                      handle
+                    }
+                    authorV2 {
+                      name
+                    }
+                    tags
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
               }
-              blog {
-                handle
-              }
-              authorV2 {
-                name
-              }
-              tags
             }
           }
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
         }
-      }
-    }
-  }
-}
-
-`,
+      }`
     });
 
     const blogs = response.body.data.blogs.edges;
