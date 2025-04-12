@@ -197,9 +197,9 @@ export async function fetchShopifyStoreDetails(session) {
     hasNextPage = true;
     cursor = null;
 
-    const response = await client.request({
+    const response = await client.query({
       query: `{
-  blogs(first: 2) {
+  blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
     edges {
       node {
         id
