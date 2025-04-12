@@ -198,7 +198,7 @@ export async function fetchShopifyStoreDetails(session) {
     cursor = null;
 
    const response = await client.query({
-  data: `{
+     data: `{
     blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
       edges {
         node {
@@ -235,32 +235,37 @@ export async function fetchShopifyStoreDetails(session) {
         }
       }
     }
-  }`
-});
+  }`,
+   });
 
-const blogs = response.body.data.blogs.edges;
 
-for (const blog of blogs) {
-  const blogArticles = blog.node.articles.edges;
+   console.log(JSON.stringify(response.body));
 
-  storeDetails.blogPosts.push(
-    ...blogArticles.map((article) => ({
-      id: article.node.id,
-      title: article.node.title,
-      handle: article.node.handle,
-      content: article.node.contentHtml, // ✅ correct field
-      excerpt: article.node.excerpt,
-      publishedAt: article.node.publishedAt,
-      tags: article.node.tags,
-      blogId: blog.node.id,
-      blogTitle: blog.node.title,
-      blogHandle: blog.node.handle,
-      url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-      metaImage: article.node.image?.url || null,
-      author: article.node.authorV2?.name || ""
-    }))
-  );
-}
+
+   const blogs = response.body.data.blogs.edges;
+
+   for (const blog of blogs) {
+     const blogArticles = blog.node.articles.edges;
+
+     storeDetails.blogPosts.push(
+       ...blogArticles.map((article) => ({
+         id: article.node.id,
+         title: article.node.title,
+         handle: article.node.handle,
+         content: article.node.contentHtml,
+         excerpt: article.node.excerpt,
+         publishedAt: article.node.publishedAt,
+         tags: article.node.tags,
+         blogId: blog.node.id,
+         blogTitle: blog.node.title,
+         blogHandle: blog.node.handle,
+         url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
+         metaImage: article.node.image?.url || null,
+         author: article.node.authorV2?.name || "",
+       }))
+     );
+   }
+
 
 
     // Set homepage data
