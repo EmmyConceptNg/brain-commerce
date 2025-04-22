@@ -1,10 +1,10 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "69d2e943e442b5bc9e43744e808a340a"
+client_id = "b36f9a2acc20c4cc0f5bc6706d8bf94e"
 application_url = "https://brain-commerce.onrender.com"
 embedded = true
-name = "BrainCommerce1"
-handle = "braincommerce1"
+name = "BrainCommerce"
+handle = "braincommerceai"
 
 [build]
 automatically_update_urls_on_dev = true
