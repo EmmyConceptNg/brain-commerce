@@ -389,7 +389,7 @@ export default function HomePage() {
                   Create an account on Brain Commerce
                 </Link>
               </InlineStack>
-             
+
               {syncing && (
                 <Box padding="4">
                   <Spinner accessibilityLabel="Syncing" size="large" />
@@ -412,7 +412,10 @@ export default function HomePage() {
                 Follow these steps to complete the Brain Commerce integration:
               </Text>
               <BlockStack gap="300">
-                <Text as="p">1. Add this code to your theme.liquid file just before the closing &lt;/body&gt; tag:</Text>
+                <Text as="p">
+                  1. Add this code to your theme.liquid file just before the
+                  closing &lt;/body&gt; tag:
+                </Text>
                 <Box
                   background="bg-surface-secondary"
                   padding="400"
@@ -427,7 +430,7 @@ export default function HomePage() {
                         navigator.clipboard.writeText(
                           `<script async src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc" storeid="${storeId}"></script>`
                         );
-                        toast.success('Code copied to clipboard!');
+                        toast.success("Code copied to clipboard!");
                       }}
                     >
                       Copy
@@ -436,14 +439,21 @@ export default function HomePage() {
                 </Box>
                 <Text as="p">2. To edit your theme:</Text>
                 <BlockStack gap="200">
-                  <Text as="p">• Go to Online Store → Themes in your Shopify admin</Text>
+                  <Text as="p">
+                    • Go to Online Store → Themes in your Shopify admin
+                  </Text>
                   <Text as="p">• Click "Customize" on your active theme</Text>
                   <Text as="p">• Click "Edit code" in the theme editor</Text>
                   <Text as="p">• Open the theme.liquid file</Text>
-                  <Text as="p">• Paste the code just before the closing &lt;/body&gt; tag</Text>
+                  <Text as="p">
+                    • Paste the code just before the closing &lt;/body&gt; tag
+                  </Text>
                   <Text as="p">• Save the changes</Text>
                 </BlockStack>
-                <Text as="p">3. Click the "Activate Webhooks" button above to enable real-time updates</Text>
+                <Text as="p">
+                  3. Click the "Activate Webhooks" button above to enable
+                  real-time updates
+                </Text>
               </BlockStack>
             </BlockStack>
           </Card>
@@ -452,20 +462,40 @@ export default function HomePage() {
           <Card sectioned>
             <VideoThumbnail
               videoLength={80}
-              thumbnailUrl="https://example.com/video-thumbnail.jpg"
+              thumbnailUrl="https://pub-ece2f518b9504c2884b29ab98d7f6283.r2.dev/.Screenshot%202025-04-24%20at%2016.19.50.png"
               onClick={() => {
-                window.open(
-                  "https://braincommerce.io/how-to-create-account",
-                  "_blank"
-                );
+                window.open("https://youtu.be/j6k8W2YY4jo", "_blank");
               }}
             />
-            <TextContainer>
+            <BlockStack>
               <Text as="p">
                 Watch this video to learn how to create an account and get your
                 API keys.
               </Text>
-            </TextContainer>
+              <Text as="p">
+                1. Once you've created an account and logged in, go to the Store
+                Settings section in the left sidebar. Then navigate to the
+                Account/API section.
+              </Text>
+              <Text as="p">
+                2. click on Manage API Keys, then select Generate New API Key
+              </Text>
+              <Text as="p">
+                3. Enter a name for the key, and the system will create it for
+                you.
+              </Text>
+              <Text as="p">
+                4. Important: Make sure to copy and save the API key right away.
+              </Text>
+              <Text as="p">
+                For security reasons, it will not be visible again. Keep your
+                API keys private and store them in a safe location.
+              </Text>
+              <Text as="p">
+                If you need any help, feel free to contact our support team.
+              </Text>
+              <Text as="p">Thank you very much!</Text>
+            </BlockStack>
           </Card>
         </Layout.Section>
       </Layout>
