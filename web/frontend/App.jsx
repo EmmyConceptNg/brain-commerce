@@ -38,8 +38,7 @@ export default function App() {
               <NavMenu>
                 <a href="/" rel="home" />
               </NavMenu>
-              wait
-              {/* <Routes pages={pages} /> */}
+              <Routes pages={pages} />
             </PersistGate> {/* Close PersistGate */}
           </Provider> {/* Close Provider */}
         </QueryProvider>
