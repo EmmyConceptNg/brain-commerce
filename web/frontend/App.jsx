@@ -29,7 +29,7 @@ function useShopifyAuthRedirect() {
       // Not embedded, fallback to normal redirect
       window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
     }
-  }, [app]);
+  }, []);
 }
 
 export default function App() {
