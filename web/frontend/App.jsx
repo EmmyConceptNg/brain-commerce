@@ -10,9 +10,30 @@ import { PersistGate } from 'redux-persist/integration/react'; // Import Persist
 import { persistor, store } from './store'; // Import persistor and store
 import { Provider } from 'react-redux'; // Import Provider from react-redux
 
+import { useEffect } from "react";
+import { Redirect } from "@shopify/app-bridge/actions";
+import { useAppBridge } from "@shopify/app-bridge-react";
+
+function useShopifyAuthRedirect() {
+  const app = useAppBridge();
+
+  useEffect(() => {
+    // Check for authUrl in the query string (set by backend)
+    const params = new URLSearchParams(window.location.search);
+    const authUrl = params.get("authUrl");
+    const shop = params.get("shop");
+
+    if (authUrl && app) {
+      Redirect.create(app).dispatch(Redirect.Action.REMOTE, authUrl);
+    } else if (!authUrl && shop && window.top === window.self) {
+      // Not embedded, fallback to normal redirect
+      window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
+    }
+  }, [app]);
+}
+
 export default function App() {
-  // Any .tsx or .jsx files in /pages will become a route
-  // See documentation for <Routes /> for more info
+  useShopifyAuthRedirect();
   const pages = import.meta.glob("./pages/**/!(*.test.[jt]sx)*.([jt]sx)", {
     eager: true,
   });

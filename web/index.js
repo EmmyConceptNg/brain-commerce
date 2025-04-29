@@ -117,8 +117,7 @@ app.use(
       if (!session) {
         const shop = req.query.shop;
         if (shop) {
-          // Redirect to OAuth to create a session
-          return res.redirect(`/api/auth?shop=${encodeURIComponent(shop)}`);
+          return res.status(401).json({ authUrl: `/api/auth?shop=${encodeURIComponent(shop)}` });
         }
         return res.status(401).send({ error: "Unauthorized - Invalid Session" });
       }
@@ -224,8 +223,10 @@ app.use(
       }
 
       if (!session) {
-        // Redirect to OAuth to create a session
-        return res.redirect(`/api/auth?shop=${encodeURIComponent(shop)}`);
+        // Redirect to the app root with authUrl param for frontend to handle
+        const authUrl = `/api/auth?shop=${encodeURIComponent(shop)}`;
+        const appUrl = `/?shop=${encodeURIComponent(shop)}&host=${encodeURIComponent(host)}&authUrl=${encodeURIComponent(authUrl)}`;
+        return res.redirect(appUrl);
       }
     } catch (e) {
       console.error("Error retrieving session:", e);
