@@ -190,7 +190,12 @@ app.post("/api/products", async (_req, res) => {
 });
 
 app.use(
-  shopify.cspHeaders()
+  shopify.cspHeaders({
+    frameAncestors: [
+      "https://admin.shopify.com",
+      "https://*.myshopify.com"
+    ]
+  })
 );
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
