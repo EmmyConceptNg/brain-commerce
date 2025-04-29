@@ -192,9 +192,9 @@ app.post("/api/products", async (_req, res) => {
 
 
 
+app.use(serveStatic(STATIC_PATH, { index: false }));
 app.use(shopify.cspHeaders());
 
-app.use(serveStatic(STATIC_PATH, { index: false }));
 
 app.use(
   "/*",
