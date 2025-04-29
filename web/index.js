@@ -228,10 +228,10 @@ app.use(
           // Already redirected once, just render the page and let frontend handle it
           return next();
         }
-        // Redirect to the app root with authUrl param for frontend to handle
+
+        // Redirect to OAuth to create a session
         const authUrl = `/api/auth?shop=${encodeURIComponent(shop)}`;
-        const appUrl = `/?shop=${encodeURIComponent(shop)}&host=${encodeURIComponent(host)}&authUrl=${encodeURIComponent(authUrl)}`;
-        return res.redirect(appUrl);
+        return res.redirect(authUrl);
       }
     } catch (e) {
       console.error("Error retrieving session:", e);
@@ -239,7 +239,6 @@ app.use(
     }
     // --- END SESSION CHECK ---
 
-    // Don't check for host here, let ensureInstalledOnShop handle it
     next();
   },
   shopify.ensureInstalledOnShop(),
