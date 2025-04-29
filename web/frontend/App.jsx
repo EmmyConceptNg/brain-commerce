@@ -23,11 +23,14 @@ export default function App() {
       const shop = params.get("shop");
       const host = params.get("host");
 
-      if (shop && host) {
-        const redirectUri = encodeURIComponent(
-          `https://${window.location.hostname}/?shop=${shop}&host=${host}`
+      if (window.top === window.self && shop && host) {
+        // Not inside iframe — redirect to embedded app version
+        window.location.assign(
+          `https://admin.shopify.com/store/${shop.replace(
+            ".myshopify.com",
+            ""
+          )}/apps/braincommerceai`
         );
-        window.location.assign(`/exitiframe?redirectUri=${redirectUri}`);
       }
     }
   }, []);
