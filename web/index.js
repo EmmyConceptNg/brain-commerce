@@ -223,6 +223,11 @@ app.use(
       }
 
       if (!session) {
+        // Prevent infinite redirect loop
+        if (req.query.authUrl) {
+          // Already redirected once, just render the page and let frontend handle it
+          return next();
+        }
         // Redirect to the app root with authUrl param for frontend to handle
         const authUrl = `/api/auth?shop=${encodeURIComponent(shop)}`;
         const appUrl = `/?shop=${encodeURIComponent(shop)}&host=${encodeURIComponent(host)}&authUrl=${encodeURIComponent(authUrl)}`;
