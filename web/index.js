@@ -75,6 +75,18 @@ app.locals.sendProgressUpdate = (type, synced, total) => {
   });
 };
 
+// Dynamic CSP middleware for embedded app
+app.use((req, res, next) => {
+  const shop = req.query.shop;
+  if (shop) {
+    res.setHeader(
+      "Content-Security-Policy",
+      `frame-ancestors https://${shop} https://admin.shopify.com;`
+    );
+  }
+  next();
+});
+
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
