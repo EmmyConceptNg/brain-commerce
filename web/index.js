@@ -206,6 +206,29 @@ app.use(
       return res.status(400).send("Missing shop parameter");
     }
 
+    // --- SESSION CHECK AND REDIRECT ---
+    try {
+      const sessionId = await shopify.api.session.getCurrentId({
+        isOnline: shopify.config.useOnlineTokens,
+        rawRequest: req,
+        rawResponse: res,
+      });
+
+      let session = null;
+      if (sessionId) {
+        session = await shopify.config.sessionStorage.loadSession(sessionId);
+      }
+
+      if (!session) {
+        // Redirect to OAuth to create a session
+        return res.redirect(`/api/auth?shop=${encodeURIComponent(shop)}`);
+      }
+    } catch (e) {
+      console.error("Error retrieving session:", e);
+      return res.status(500).send({ error: "Internal Server Error" });
+    }
+    // --- END SESSION CHECK ---
+
     // Don't check for host here, let ensureInstalledOnShop handle it
     next();
   },
