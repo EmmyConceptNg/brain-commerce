@@ -2,7 +2,7 @@ import { BillingInterval, LATEST_API_VERSION } from "@shopify/shopify-api";
 import { shopifyApp } from "@shopify/shopify-app-express";
 import { MongoDBSessionStorage } from "@shopify/shopify-app-session-storage-mongodb";
 import { restResources } from "@shopify/shopify-api/rest/admin/2025-01";
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 import mongoose from "mongoose";
 
 dotenv.config();
@@ -24,7 +24,7 @@ const billingConfig = {
     interval: BillingInterval.OneTime,
   },
 };
-  
+
 const shopify = shopifyApp({
   api: {
     apiVersion: LATEST_API_VERSION,
@@ -45,8 +45,6 @@ const shopify = shopifyApp({
   },
   sessionStorage: new MongoDBSessionStorage(MONGO_URI),
 });
-
-
 
 mongoose
   .connect(process.env.MONGO_URI)

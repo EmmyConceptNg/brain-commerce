@@ -32,18 +32,8 @@ export default function HomePage() {
   const [apiKey, setApiKey] = useState(apiKeyFromState || "");
   const [storeId, setStoreId] = useState(storeIdFromState || "");
   const [syncing, setSyncing] = useState(false);
-  const [progress, setProgress] = useState({
-    pages: 0,
-    categories: 0,
-    products: 0,
-  });
-  const [totalCounts, setTotalCounts] = useState({
-    pages: 0,
-    categories: 0,
-    products: 0,
-  });
+ 
   const [errors, setErrors] = useState({ apiKey: "", storeId: "" });
-  const [host, setHost] = useState(""); // Add this line
 
   const [activating, setActivating] = useState(false);
 
@@ -52,10 +42,7 @@ export default function HomePage() {
     setStoreId(storeIdFromState);
   }, [apiKeyFromState, storeIdFromState]);
 
-  const updateProgress = useCallback((type, synced, total) => {
-    setProgress((prev) => ({ ...prev, [type]: synced }));
-    setTotalCounts((prev) => ({ ...prev, [type]: total }));
-  }, []);
+  
 
   const validateFields = useCallback(() => {
     const newErrors = { apiKey: "", storeId: "" };
@@ -269,72 +256,7 @@ export default function HomePage() {
     }
   };
 
-  useEffect(() => {
-    let eventSource;
-    
-    const connectSSE = () => {
-      try {
-        eventSource = new EventSource('/api/v1/sync-progress');
-
-        eventSource.onopen = () => {
-          console.log('SSE Connected');
-        };
-
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log('SSE message received:', data);
-            
-            if (data.type === 'connection') {
-              console.log('SSE connection confirmed:', data.status);
-              return;
-            }
-            
-            setProgress((prev) => ({ ...prev, [data.type]: data.synced }));
-            setTotalCounts((prev) => ({ ...prev, [data.type]: data.total }));
-          } catch (error) {
-            console.error('Error processing SSE message:', error);
-          }
-        };
-
-        eventSource.onerror = (error) => {
-          console.error('SSE Error:', error);
-          if (eventSource.readyState === EventSource.CLOSED) {
-            console.log('SSE connection closed');
-          }
-        };
-
-      } catch (error) {
-        console.error('Error creating SSE connection:', error);
-      }
-    };
-
-    if (syncing) {
-      connectSSE();
-    }
-
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [syncing]);
-
-  const renderProgressBar = (type) => {
-    if (!syncing) return null;
-    const currentProgress = progress[type];
-    const total = totalCounts[type];
-    const percentage = total ? (currentProgress / total) * 100 : 0;
-    
-    return (
-      <Box padding="3">
-        <Text as="p" variant="bodyMd">
-          {type.charAt(0).toUpperCase() + type.slice(1)}: {currentProgress} / {total}
-        </Text>
-        <ProgressBar progress={percentage} size="small" />
-      </Box>
-    );
-  };
+  
 
   return (
     <Page narrowWidth>
