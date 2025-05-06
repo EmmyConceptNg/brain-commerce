@@ -87,11 +87,11 @@ app.use(
 app.use(express.json());
 
 // Global middleware to log all incoming requests
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  console.log("Headers:", req.headers);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`Incoming request: ${req.method} ${req.url}`);
+//   console.log("Headers:", req.headers);
+//   next();
+// });
 
 
 
