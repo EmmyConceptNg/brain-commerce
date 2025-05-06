@@ -25,9 +25,29 @@ function useShopifyAuthRedirect() {
 
     if (authUrl && app) {
       Redirect.create(app).dispatch(Redirect.Action.REMOTE, authUrl);
-    } else if (!authUrl && shop && window.top === window.self) {
-      // Not embedded, fallback to normal redirect
-      window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
+    } else if (shop) {
+      // Check session status with a lightweight API call
+      fetch("/api/v1/validate-api-key", {
+        method: "GET",
+        credentials: "include",
+      })
+        .then((response) => {
+          if (response.status === 401 || response.status === 403) {
+            // Not authenticated, redirect to auth
+            if (window.top === window.self) {
+              window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
+            } else if (app) {
+              Redirect.create(app).dispatch(
+                Redirect.Action.REMOTE,
+                `/api/auth?shop=${encodeURIComponent(shop)}`
+              );
+            }
+          }
+        })
+        .catch((err) => {
+          // Optionally handle error
+          console.error("Session check failed", err);
+        });
     }
   }, []);
 }
