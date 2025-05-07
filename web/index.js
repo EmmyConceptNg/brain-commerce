@@ -32,7 +32,6 @@ const STATIC_PATH =
     : `${process.cwd()}/frontend/`;
 
 const app = express();
-const server = http.createServer(app);
 
 // Update CORS configuration to allow WebSocket
 app.use(cors({
@@ -129,42 +128,18 @@ app.use(shopify.cspHeaders());
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
-app.use("/*", shopify.ensureInstalledOnShop(), async (req, res, next) => {
-  try {
-    const sessionId = await shopify.api.session.getCurrentId({
-      isOnline: shopify.config.useOnlineTokens,
-      rawRequest: req,
-      rawResponse: res,
-    });
-    const session = await shopify.config.sessionStorage.loadSession(sessionId ?? "");
-
-    if (!session) {
-      // No session, redirect to auth
-      const shop = req.query.shop;
-      if (shop) {
-        return res.redirect(
-          `${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`
-        );
-      }
-      return res.status(401).send("Shop parameter missing for authentication.");
-    }
-
-    // Session exists, serve app
-    res
-      .status(200)
-      .set("Content-Type", "text/html")
-      .send(
-        readFileSync(join(STATIC_PATH, "index.html"))
-          .toString()
-          .replace("%VITE_SHOPIFY_API_KEY%", process.env.SHOPIFY_API_KEY || "")
-      );
-  } catch (e) {
-    console.error("Session check error:", e);
-    return res.status(500).send("Internal server error.");
-  }
+app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
+  res
+    .status(200)
+    .set("Content-Type", "text/html")
+    .send(
+      readFileSync(join(STATIC_PATH, "index.html"))
+        .toString()
+        .replace("%VITE_SHOPIFY_API_KEY%", process.env.SHOPIFY_API_KEY || "")
+    );
 });
 
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
