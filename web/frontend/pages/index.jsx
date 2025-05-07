@@ -15,17 +15,16 @@ import {
   Spinner,
   ProgressBar,
 } from "@shopify/polaris";
-import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
+
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux"; // Import useDispatch and useSelector from react-redux
 
-import { shopifyFetch, getShopifyHost } from "../utils/apiUtils";
+import { getShopifyHost } from "../utils/apiUtils";
 import { toast } from "react-toastify";
 import { setCredentials } from "../store/actions"; // Import the setCredentials action
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const app = useAppBridge();
   const dispatch = useDispatch(); // Initialize useDispatch
   const apiKeyFromState = useSelector((state) => state.apiKey); // Get apiKey from Redux state
   const storeIdFromState = useSelector((state) => state.storeId); // Get storeId from Redux state
