@@ -10,50 +10,11 @@ import { PersistGate } from 'redux-persist/integration/react'; // Import Persist
 import { persistor, store } from './store'; // Import persistor and store
 import { Provider } from 'react-redux'; // Import Provider from react-redux
 
-import { useEffect } from "react";
-import { Redirect } from "@shopify/app-bridge/actions";
-import { useAppBridge } from "@shopify/app-bridge-react";
 
-function useShopifyAuthRedirect() {
-  const app = useAppBridge();
 
-  useEffect(() => {
-    // Check for authUrl in the query string (set by backend)
-    const params = new URLSearchParams(window.location.search);
-    const authUrl = params.get("authUrl");
-    const shop = params.get("shop");
-
-    if (authUrl && app) {
-      Redirect.create(app).dispatch(Redirect.Action.REMOTE, authUrl);
-    } else if (shop) {
-      // Check session status with a lightweight API call
-      fetch("/api/v1/validate-api-key", {
-        method: "GET",
-        credentials: "include",
-      })
-        .then((response) => {
-          if (response.status === 401 || response.status === 403) {
-            // Not authenticated, redirect to auth
-            if (window.top === window.self) {
-              window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
-            } else if (app) {
-              Redirect.create(app).dispatch(
-                Redirect.Action.REMOTE,
-                `/api/auth?shop=${encodeURIComponent(shop)}`
-              );
-            }
-          }
-        })
-        .catch((err) => {
-          // Optionally handle error
-          console.error("Session check failed", err);
-        });
-    }
-  }, []);
-}
 
 export default function App() {
-  useShopifyAuthRedirect();
+
   const pages = import.meta.glob("./pages/**/!(*.test.[jt]sx)*.([jt]sx)", {
     eager: true,
   });
