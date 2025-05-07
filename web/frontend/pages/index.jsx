@@ -31,7 +31,7 @@ export default function HomePage() {
   const [apiKey, setApiKey] = useState(apiKeyFromState || "");
   const [storeId, setStoreId] = useState(storeIdFromState || "");
   const [syncing, setSyncing] = useState(false);
- 
+
   const [errors, setErrors] = useState({ apiKey: "", storeId: "" });
 
   const [activating, setActivating] = useState(false);
@@ -41,28 +41,23 @@ export default function HomePage() {
     setStoreId(storeIdFromState);
   }, [apiKeyFromState, storeIdFromState]);
 
+  // ...inside useEffect in pages/index.jsx...
   useEffect(() => {
-    // Extract shop from URL (if present)
-    const urlParams = new URLSearchParams(window.location.search);
-    const shop = urlParams.get("shop");
-    if (shop) {
-      fetch("/api/v1/user/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shop }),
+    fetch("/api/v1/user/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.created) {
+          console.log("User created for shop:", data.user.shop);
+        } else {
+          console.log("User already exists for shop:", data.user.shop);
+        }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.created) {
-            console.log("User created for shop:", shop);
-          } else {
-            console.log("User already exists for shop:", shop);
-          }
-        })
-        .catch((err) => {
-          console.error("Error creating user:", err);
-        });
-    }
+      .catch((err) => {
+        console.error("Error creating user:", err);
+      });
   }, []);
 
   const validateFields = useCallback(() => {
@@ -82,7 +77,7 @@ export default function HomePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ apiKey, storeId, host }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -92,7 +87,9 @@ export default function HomePage() {
       const data = await response.json();
       if (data.validated) {
         console.log("API Key and Store ID are valid");
-        toast.success("API Key and Store ID are valid! Please wait while we sync shopify with brain commerce");
+        toast.success(
+          "API Key and Store ID are valid! Please wait while we sync shopify with brain commerce"
+        );
 
         // Dispatch the credentials to Redux store
         dispatch(setCredentials({ apiKey, storeId }));
@@ -125,11 +122,13 @@ export default function HomePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ apiKey, storeId, host }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error(`Shopify API request failed with status: ${response.status}`);
+        throw new Error(
+          `Shopify API request failed with status: ${response.status}`
+        );
       }
 
       const data = await response.json();
@@ -193,8 +192,8 @@ export default function HomePage() {
     try {
       if (!validateFields()) return;
 
-      setActivating(true)
-      
+      setActivating(true);
+
       const host = getShopifyHost();
 
       // Then create new webhooks
@@ -212,7 +211,7 @@ export default function HomePage() {
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-product-webhook?storeID=${storeId}`,
         },
         {
-          topic: "COLLECTIONS_CREATE", 
+          topic: "COLLECTIONS_CREATE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-create-collection-webhook?storeID=${storeId}`,
         },
         {
@@ -222,62 +221,63 @@ export default function HomePage() {
         {
           topic: "COLLECTIONS_DELETE",
           callbackUrl: `https://www.braincommerce.io/api/v0/store/shopify/webhooks/products/shopify-delete-collection-webhook?storeID=${storeId}`,
-        }
+        },
       ];
 
-      const createResponse = await fetch('/api/v1/activate-webhooks', {
-        method: 'POST',
+      const createResponse = await fetch("/api/v1/activate-webhooks", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
-        body: JSON.stringify({ 
+        credentials: "include",
+        body: JSON.stringify({
           webhooks,
           apiKey,
           storeId,
-          host
-        })
+          host,
+        }),
       });
 
       const data = await createResponse.json();
-      console.log('Webhook activation response:', data); // Add this line for debugging
+      console.log("Webhook activation response:", data); // Add this line for debugging
 
       if (createResponse.ok && data.results) {
-        const allWebhooksSuccessful = data.results.every(result => result.success);
-        
+        const allWebhooksSuccessful = data.results.every(
+          (result) => result.success
+        );
+
         if (allWebhooksSuccessful) {
-          toast.success('All webhooks activated successfully!');
+          toast.success("All webhooks activated successfully!");
           await checkWebhooks();
         } else {
           const failedWebhooks = data.results
-            .filter(result => !result.success)
-            .map(result => ({
+            .filter((result) => !result.success)
+            .map((result) => ({
               topic: result.topic,
-              error: result.error || 'Unknown error'
+              error: result.error || "Unknown error",
             }));
-          
-          console.error('Failed webhooks:', failedWebhooks); // Add this line for debugging
-          
+
+          console.error("Failed webhooks:", failedWebhooks); // Add this line for debugging
+
           const failedWebhookMessages = failedWebhooks
-            .map(webhook => `${webhook.topic}: ${webhook.error}`)
-            .join('\n');
-          
-          toast.warning(`Some webhooks failed to activate:\n${failedWebhookMessages}`);
+            .map((webhook) => `${webhook.topic}: ${webhook.error}`)
+            .join("\n");
+
+          toast.warning(
+            `Some webhooks failed to activate:\n${failedWebhookMessages}`
+          );
         }
       } else {
-        const errorMessage = data.error || 'Unknown error occurred';
+        const errorMessage = data.error || "Unknown error occurred";
         toast.error(`Failed to activate webhooks: ${errorMessage}`);
       }
-
     } catch (error) {
-      console.error('Error activating webhooks:', error);
-      toast.error('Error activating webhooks: ' + error.message);
-    }finally {
+      console.error("Error activating webhooks:", error);
+      toast.error("Error activating webhooks: " + error.message);
+    } finally {
       setActivating(false);
     }
   };
-
-  
 
   return (
     <Page narrowWidth>

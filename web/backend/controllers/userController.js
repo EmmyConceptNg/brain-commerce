@@ -6,9 +6,10 @@ import User from "../models/User.js";
  */
 export const createUserIfNotExists = async (req, res) => {
   try {
-    const { shop } = req.body;
+    // Get shop from the Shopify session (set by validateAuthenticatedSession)
+    const shop = res.locals.shopify?.session?.shop;
     if (!shop) {
-      return res.status(400).json({ error: "Missing shop parameter" });
+      return res.status(401).json({ error: "Unauthorized: No shop in session" });
     }
 
     let user = await User.findOne({ shop });
