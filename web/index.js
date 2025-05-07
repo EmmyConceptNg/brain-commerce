@@ -34,12 +34,12 @@ const STATIC_PATH =
 const app = express();
 
 // Update CORS configuration to allow WebSocket
-app.use(cors({
-  origin: '*',
-  methods: 'GET, POST, PUT, DELETE, OPTIONS',
-  allowedHeaders: 'Content-Type, Authorization, X-Requested-With',
-  credentials: true
-}));
+// app.use(cors({
+//   origin: '*',
+//   methods: 'GET, POST, PUT, DELETE, OPTIONS',
+//   allowedHeaders: 'Content-Type, Authorization, X-Requested-With',
+//   credentials: true
+// }));
 
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
