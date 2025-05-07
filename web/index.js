@@ -16,6 +16,7 @@ import cors from 'cors'
 import shopifyRoutes from "./backend/routes/shopifyRoutes.js";
 import adminRoutes from "./backend/routes/admin.js";
 import webhookRoutes from "./backend/routes/activateWebhooks.js";
+import userRoutes from "./backend/routes/userRoutes.js";
 
 // Add these lines after imports to define __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -113,6 +114,11 @@ app.use(
   "/api/v1/activate-webhooks",
   shopify.validateAuthenticatedSession(),
   webhookRoutes
+);
+
+app.use(
+  "/api/v1/user",
+  userRoutes
 );
 
 app.get("/debug", (req, res) => {

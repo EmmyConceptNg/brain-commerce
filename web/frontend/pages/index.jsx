@@ -41,7 +41,29 @@ export default function HomePage() {
     setStoreId(storeIdFromState);
   }, [apiKeyFromState, storeIdFromState]);
 
-  
+  useEffect(() => {
+    // Extract shop from URL (if present)
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get("shop");
+    if (shop) {
+      fetch("/api/v1/user/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shop }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.created) {
+            console.log("User created for shop:", shop);
+          } else {
+            console.log("User already exists for shop:", shop);
+          }
+        })
+        .catch((err) => {
+          console.error("Error creating user:", err);
+        });
+    }
+  }, []);
 
   const validateFields = useCallback(() => {
     const newErrors = { apiKey: "", storeId: "" };
