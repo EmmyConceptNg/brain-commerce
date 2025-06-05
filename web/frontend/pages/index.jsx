@@ -360,9 +360,7 @@ export default function HomePage() {
                     <br />
                     <br />
                     <Link
-                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${
-                        import.meta.env.VITE_SHOPIFY_API_KEY
-                      }&handle=brain_commerce`}
+                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${import.meta.env.VITE_SHOPIFY_API_KEY}&handle=brain_commerce&template=index&section=main`}
                       external
                     >
                       Open Theme Editor
