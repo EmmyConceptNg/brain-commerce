@@ -309,11 +309,7 @@ export async function postToBrainCommerce(
     let user = await User.findOne({ shop: shop });
     if (!user) throw new Error("User not found");
 
-    // Update progress using the app.locals.sendProgressUpdate function
-    const sendProgress = (type, synced, total) => {
-      app.locals.sendProgressUpdate(type, synced, total);
-    };
-
+   
     console.log('store details: ', JSON.stringify(storeDetails));
 
     // Process homepage (add this before processing other items)
@@ -326,7 +322,7 @@ export async function postToBrainCommerce(
         storeId,
         session
       );
-      sendProgress("homepage", 1, 1);
+      
     }
 
     // Process pages
@@ -340,7 +336,7 @@ export async function postToBrainCommerce(
         session
       );
       syncedPages++;
-      sendProgress("pages", syncedPages, storeDetails.pages.length);
+      
     }
 
     // Process products
@@ -354,7 +350,7 @@ export async function postToBrainCommerce(
         session
       );
       syncedProducts++;
-      sendProgress("products", syncedProducts, storeDetails.products.length);
+      
     }
 
     // Process categories
@@ -368,11 +364,6 @@ export async function postToBrainCommerce(
         session
       );
       syncedCategories++;
-      sendProgress(
-        "categories",
-        syncedCategories,
-        storeDetails.categories.length
-      );
     }
 
     // Process blogs
@@ -386,11 +377,6 @@ export async function postToBrainCommerce(
         session
       );
       syncedBlogPosts++;
-      sendProgress(
-        "blogPosts",
-        syncedBlogPosts,
-        storeDetails.blogPosts.length
-      );
     }
 
     await user.save();
