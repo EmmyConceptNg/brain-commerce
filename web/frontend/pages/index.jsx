@@ -354,7 +354,7 @@ export default function HomePage() {
                     • Save the changes<br />
                     <br />
                     <Link
-                      url={`https://admin.shopify.com/store/${storeHandle}/themes`}
+                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_SHOPIFY_API_KEY}`}
                       external
                     >
                       Open Theme Editor
