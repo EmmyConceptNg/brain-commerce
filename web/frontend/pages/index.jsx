@@ -255,7 +255,11 @@ export default function HomePage() {
     }
   };
 
-  
+  // Extract Shopify store handle from shop domain
+  const shop = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("shop") || ""
+    : "";
+  const storeHandle = shop.replace(".myshopify.com", "");
 
   return (
     <Page narrowWidth>
@@ -334,8 +338,7 @@ export default function HomePage() {
               </Text>
               <BlockStack gap="300">
                 <Text as="p">
-                  1. Add this code to your theme.liquid file just before the
-                  closing &lt;/body&gt; tag:
+                  1. Add the <b>Brain Commerce Bar</b> block to your theme using the Shopify theme editor:
                 </Text>
                 <Box
                   background="bg-surface-secondary"
@@ -343,37 +346,23 @@ export default function HomePage() {
                   borderWidth="025"
                   borderRadius="200"
                 >
-                  <InlineStack align="space-between">
-                    <code>{`<script async src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc" storeid="${storeId}"></script>`}</code>
-                    <Button
-                      variant="plain"
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          `<script async src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc" storeid="${storeId}"></script>`
-                        );
-                        toast.success("Code copied to clipboard!");
-                      }}
+                  <Text as="p">
+                    • Go to <b>Online Store → Themes</b> in your Shopify admin<br />
+                    • Click <b>Customize</b> on your active theme<br />
+                    • In the theme editor, click <b>Add section</b> or <b>Add block</b><br />
+                    • Search for <b>Brain Commerce Bar</b> and add it to your desired location<br />
+                    • Save the changes<br />
+                    <br />
+                    <Link
+                      url={`https://admin.shopify.com/store/${storeHandle}/themes`}
+                      external
                     >
-                      Copy
-                    </Button>
-                  </InlineStack>
+                      Open Theme Editor
+                    </Link>
+                  </Text>
                 </Box>
-                <Text as="p">2. To edit your theme:</Text>
-                <BlockStack gap="200">
-                  <Text as="p">
-                    • Go to Online Store → Themes in your Shopify admin
-                  </Text>
-                  <Text as="p">• Click "Customize" on your active theme</Text>
-                  <Text as="p">• Click "Edit code" in the theme editor</Text>
-                  <Text as="p">• Open the theme.liquid file</Text>
-                  <Text as="p">
-                    • Paste the code just before the closing &lt;/body&gt; tag
-                  </Text>
-                  <Text as="p">• Save the changes</Text>
-                </BlockStack>
                 <Text as="p">
-                  3. Click the "Activate Webhooks" button above to enable
-                  real-time updates
+                  2. Click the "Activate Webhooks" button above to enable real-time updates.
                 </Text>
               </BlockStack>
             </BlockStack>

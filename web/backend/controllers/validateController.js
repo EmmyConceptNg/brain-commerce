@@ -20,6 +20,67 @@ export const validate = async (req, res) => {
       { upsert: true, new: true }
     );
 
+    // Fetch the Shop GID dynamically
+    const shopIdQuery = `
+      {
+        shop {
+          id
+        }
+      }
+    `;
+    let shopGid;
+    try {
+      const shopIdResp = await client.query({ data: { query: shopIdQuery } });
+      shopGid = shopIdResp.body.data.shop.id;
+    } catch (err) {
+      console.error("Error fetching shop GID:", err);
+      return res.status(500).json({ error: "Failed to fetch shop GID" });
+    }
+
+    // Create or update a store metafield for storeId
+    const metafieldMutation = `
+      mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) {
+          metafields {
+            key
+            namespace
+            value
+            type
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    const metafields = [
+      {
+        ownerId: shopGid,
+        namespace: "brain_commerce",
+        key: "store_id",
+        type: "single_line_text_field",
+        value: storeId,
+      },
+    ];
+    try {
+      const metafieldResp = await client.query({
+        data: { query: metafieldMutation, variables: { metafields } },
+      });
+      if (
+        metafieldResp.body.data?.metafieldsSet?.userErrors?.length > 0
+      ) {
+        console.error(
+          "Metafield error:",
+          metafieldResp.body.data.metafieldsSet.userErrors
+        );
+      } else {
+        console.log("StoreId metafield set successfully.");
+      }
+    } catch (err) {
+      console.error("Error setting storeId metafield:", err);
+    }
+
     const getExistingWebhooks = `
       query {
         webhookSubscriptions(first: 100) {
