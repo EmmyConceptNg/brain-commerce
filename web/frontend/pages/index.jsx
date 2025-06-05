@@ -338,7 +338,8 @@ export default function HomePage() {
               </Text>
               <BlockStack gap="300">
                 <Text as="p">
-                  1. Add the <b>Brain Commerce Bar</b> block to your theme using the Shopify theme editor:
+                  1. Add the <b>Brain Commerce Bar</b> block to your theme using
+                  the Shopify theme editor:
                 </Text>
                 <Box
                   background="bg-surface-secondary"
@@ -347,14 +348,21 @@ export default function HomePage() {
                   borderRadius="200"
                 >
                   <Text as="p">
-                    • Go to <b>Online Store → Themes</b> in your Shopify admin<br />
-                    • Click <b>Customize</b> on your active theme<br />
-                    • In the theme editor, click <b>Add section</b> or <b>Add block</b><br />
-                    • Search for <b>Brain Commerce Bar</b> and add it to your desired location<br />
-                    • Save the changes<br />
+                    • Go to <b>Online Store → Themes</b> in your Shopify admin
+                    <br />• Click <b>Customize</b> on your active theme
+                    <br />• In the theme editor, click <b>
+                      Add section
+                    </b> or <b>Add block</b>
+                    <br />• Search for <b>Brain Commerce Bar</b> and add it to
+                    your desired location
+                    <br />
+                    • Save the changes
+                    <br />
                     <br />
                     <Link
-                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_SHOPIFY_API_KEY}`}
+                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${
+                        import.meta.env.VITE_SHOPIFY_API_KEY
+                      }&handle=brain_commerce`}
                       external
                     >
                       Open Theme Editor
@@ -362,7 +370,8 @@ export default function HomePage() {
                   </Text>
                 </Box>
                 <Text as="p">
-                  2. Click the "Activate Webhooks" button above to enable real-time updates.
+                  2. Click the "Activate Webhooks" button above to enable
+                  real-time updates.
                 </Text>
               </BlockStack>
             </BlockStack>
