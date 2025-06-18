@@ -6,10 +6,18 @@
 {% assign store_id = shop.metafields.brain_commerce.store_id %}
 
 {% if store_id %}
+  <iframe
+    id="BrainCommerceChat"
+    title="BrainCommerce.io Chat"
+    style="width: 100%; height: 300px; border: none; display: block; margin: 0 auto;"
+    allowtransparency="true"
+    scrolling="yes"
+  ></iframe>
   <script
     async
     src="https://firebasestorage.googleapis.com/v0/b/braincommerce-prod.appspot.com/o/bc_bar_prod.js?alt=media&token=0bec0839-0454-4b4c-9ad9-0950f935f0bc"
-    storeid="{{ store_id }}">
+    storeid="{{ store_id }}"
+    iframeid="BrainCommerceChat">
   </script>
 {% else %}
   <!-- Brain Commerce: store_id metafield not set -->

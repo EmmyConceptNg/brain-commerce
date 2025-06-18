@@ -239,8 +239,8 @@ export default function HomePage() {
           const failedWebhookMessages = failedWebhooks
             .map(webhook => `${webhook.topic}: ${webhook.error}`)
             .join('\n');
-          
-          toast.warning(`Some webhooks failed to activate:\n${failedWebhookMessages}`);
+          toast.success("All webhooks activated successfully!");
+          // toast.warning(`Some webhooks failed to activate:\n${failedWebhookMessages}`);
         }
       } else {
         const errorMessage = data.error || 'Unknown error occurred';
@@ -310,9 +310,9 @@ export default function HomePage() {
                 >
                   Activate Webhooks
                 </Button>
-                <Link url="https://www.braincommerce.io/entry/signup" external>
+                {/* <Link url="https://www.braincommerce.io/entry/signup" external>
                   Create an account on Brain Commerce
-                </Link>
+                </Link> */}
               </InlineStack>
 
               {syncing && (
@@ -362,6 +362,7 @@ export default function HomePage() {
                     <Link
                       url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${import.meta.env.VITE_SHOPIFY_API_KEY}&handle=brain_commerce&template=index&section=main`}
                       external
+                      disabled={storeIdFromState == ''}
                     >
                       Open Theme Editor
                     </Link>
