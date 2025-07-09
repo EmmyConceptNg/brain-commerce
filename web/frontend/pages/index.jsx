@@ -337,8 +337,9 @@ export default function HomePage() {
                 Follow these steps to complete the Brain Commerce integration:
               </Text>
               <BlockStack gap="300">
+                <Text as="p">1. Ensure you've selected "Shopify app" on the integration section on the BrainCommerce Dashboard</Text>
                 <Text as="p">
-                  1. Add the <b>Brain Commerce Bar</b> block to your theme using
+                  2. Add the <b>Brain Commerce Bar</b> block to your theme using
                   the Shopify theme editor:
                 </Text>
                 <Box
@@ -358,21 +359,23 @@ export default function HomePage() {
                     <br />
                     • Save the changes
                     <br />
-                    • Note: Pages needs to be published for the chat widget to appear
-                    in the storefront.
+                    • Note: Pages needs to be published for the chat widget to
+                    appear in the storefront.
                     <br />
                     <br />
                     <Link
-                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${import.meta.env.VITE_SHOPIFY_API_KEY}&handle=brain_commerce&template=index&section=main`}
+                      url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${
+                        import.meta.env.VITE_SHOPIFY_API_KEY
+                      }&handle=brain_commerce&template=index&section=main`}
                       external
-                      disabled={storeIdFromState == ''}
+                      disabled={storeIdFromState == ""}
                     >
                       Open Theme Editor
                     </Link>
                   </Text>
                 </Box>
                 <Text as="p">
-                  2. Click the "Activate Webhooks" button above to enable
+                  3. Click the "Activate Webhooks" button above to enable
                   real-time updates.
                 </Text>
               </BlockStack>
