@@ -32,7 +32,6 @@ export default function App() {
                     hideProgressBar={false}
                     newestOnTop={false}
                     closeOnClick
-                    rtl={true}
                     pauseOnFocusLoss
                     draggable
                     pauseOnHover
