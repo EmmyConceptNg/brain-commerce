@@ -358,6 +358,9 @@ export default function HomePage() {
                     <br />
                     • Save the changes
                     <br />
+                    • Note: Pages needs to be published for the chat widget to appear
+                    in the storefront.
+                    <br />
                     <br />
                     <Link
                       url={`https://admin.shopify.com/store/${storeHandle}/themes/current/editor?context=apps&api_key=${import.meta.env.VITE_SHOPIFY_API_KEY}&handle=brain_commerce&template=index&section=main`}
