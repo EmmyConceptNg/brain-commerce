@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "b36f9a2acc20c4cc0f5bc6706d8bf94e"
-application_url = "https://brain-commerce.onrender.com"
+application_url = "https://brain-commerce-tywc.onrender.com"
 embedded = true
 name = "BrainCommerce"
 handle = "braincommerceai"
@@ -15,7 +15,7 @@ api_version = "2025-01"
 
   [[webhooks.subscriptions]]
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-  uri = "https://brain-commerce.onrender.com/webhooks"
+  uri = "https://brain-commerce-tywc.onrender.com/webhooks"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -23,9 +23,9 @@ scopes = "read_all_cart_transforms,read_all_checkout_completion_target_customiza
 
 [auth]
 redirect_urls = [
-  "https://brain-commerce.onrender.com/auth/callback",
-  "https://brain-commerce.onrender.com/auth/shopify/callback",
-  "https://brain-commerce.onrender.com/api/auth/callback"
+  "https://brain-commerce-tywc.onrender.com/auth/callback",
+  "https://brain-commerce-tywc.onrender.com/auth/shopify/callback",
+  "https://brain-commerce-tywc.onrender.com/api/auth/callback"
 ]
 
 [pos]
