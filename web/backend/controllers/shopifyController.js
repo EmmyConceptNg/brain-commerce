@@ -417,31 +417,33 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
   const { type, data } = item;
 
-
-  
   let endpoint, itemData;
 
-  // Pick only the fields we want, excluding variants
-  const cleanedData = {
-    id: data.id,
-    title: data.title,
-    descriptionHtml: data.descriptionHtml,
-    vendor: data.vendor,
-    productType: data.productType,
-    tags: data.tags,
-    handle: data.handle,
-    featuredMedia: data.featuredMedia,
-    url: data.url,
-    metaImage: data.metaImage,
-    productPrice: data.productPrice,
-    productRegularPrice: data.productRegularPrice,
-    collections: data.collections || [] // Directly use the collections array
-  };
-
-if(type === "product") {
-  cleanedData.inStock = data.totalInventory > 0 ? "In Stock" : "Out of Stock";
-}
-
+  // For products, include ALL the data instead of just a subset
+  let cleanedData;
+  if (type === "product") {
+    cleanedData = {
+      ...data, // Include all product data
+      inStock: data.totalInventory > 0 ? "In Stock" : "Out of Stock"
+    };
+  } else {
+    // For other types, keep the existing logic
+    cleanedData = {
+      id: data.id,
+      title: data.title,
+      descriptionHtml: data.descriptionHtml,
+      vendor: data.vendor,
+      productType: data.productType,
+      tags: data.tags,
+      handle: data.handle,
+      featuredMedia: data.featuredMedia,
+      url: data.url,
+      metaImage: data.metaImage,
+      productPrice: data.productPrice,
+      productRegularPrice: data.productRegularPrice,
+      collections: data.collections || []
+    };
+  }
 
   switch (type) {
     case "page":
@@ -567,7 +569,7 @@ if(type === "product") {
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
 
       itemData = {
-        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        platformPageContent: JSON.stringify(cleanedData, null, 2), // Now includes all product data
         pageType: "single",
         url: productUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
@@ -589,12 +591,11 @@ if(type === "product") {
         ],
         productPrice: cleanedData.productPrice || "",
         productRegularPrice: cleanedData.productRegularPrice || "",
-        productWeight: cleanedData.variants?.[0]?.weight || "",
-        productDimensions: "", // Shopify doesn't have a standard dimensions field
-        productAverageRating: "", // Add if available in your data
-        productRatingCount: "", // Add if available in your data
-        productStockStatus:
-          cleanedData.totalInventory > 0 ? "In Stock" : "Out of Stock",
+        productWeight: cleanedData.variants?.edges?.[0]?.node?.weight || "",
+        productDimensions: "",
+        productAverageRating: "",
+        productRatingCount: "",
+        productStockStatus: cleanedData.inStock,
         productID: cleanedData.id || "",
         categoryID: cleanedData.collections?.[0]?.id || "",
       };
@@ -602,8 +603,8 @@ if(type === "product") {
       console.log(
         "Posting product data to Brain Commerce:",
         JSON.stringify(itemData, null, 2)
-      ); // Format with indentation
-      console.log("Page content: (product)", JSON.stringify(cleanedData)); // Format with indentation
+      );
+      console.log("Page content: (product)", JSON.stringify(cleanedData, null, 2));
 
       const productResponse = await axios.post(endpoint, itemData, { headers });
       break;
