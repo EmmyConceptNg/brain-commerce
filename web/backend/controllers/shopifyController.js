@@ -97,8 +97,14 @@ export async function fetchShopifyStoreDetails(session) {
                       compareAtPrice
                       sku
                       inventoryQuantity
-                      weight
-                      weightUnit
+                      inventoryItem {
+                        measurement {
+                          weight {
+                            value
+                            unit
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -597,6 +603,12 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session, extra
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
 
+      const firstVariant = cleanedData?.variants?.edges?.[0]?.node;
+      const weightValue =
+        firstVariant?.inventoryItem?.measurement?.weight?.value ?? "";
+      const weightUnit =
+        firstVariant?.inventoryItem?.measurement?.weight?.unit ?? "";
+
       itemData = {
         platformPageContent: JSON.stringify({
           ...cleanedData,
@@ -625,7 +637,8 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session, extra
         ],
         productPrice: cleanedData.productPrice || "",
         productRegularPrice: cleanedData.productRegularPrice || "",
-        productWeight: cleanedData.variants?.edges?.[0]?.node?.weight || "",
+        productWeight: weightValue,
+        productWeightUnit: weightUnit,
         productDimensions: "",
         productAverageRating: "",
         productRatingCount: "",
