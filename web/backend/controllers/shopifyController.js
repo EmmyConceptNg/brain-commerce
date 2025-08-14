@@ -23,7 +23,7 @@ export async function fetchShopifyStoreDetails(session) {
       currencyCode: null,
     };
 
-    // Fetch shop info and homepage
+    // Fetch shop info and homepage (remove policy fields from GraphQL)
     const shopResponse = await client.query({
       data: `{
         shop {
@@ -40,10 +40,6 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
-          shippingPolicy { title url body }
-          refundPolicy { title url body }
-          privacyPolicy { title url body }
-          termsOfService { title url body }
         }
       }`,
     });
@@ -52,12 +48,9 @@ export async function fetchShopifyStoreDetails(session) {
       `https://${shopResponse.body.data.shop.myshopifyDomain}`;
     storeDetails.shopName = shopResponse.body.data.shop.name;
     storeDetails.currencyCode = shopResponse.body.data.shop.currencyCode || null;
-    storeDetails.shopPolicies = {
-      shipping: shopResponse.body.data.shop.shippingPolicy || null,
-      refund: shopResponse.body.data.shop.refundPolicy || null,
-      privacy: shopResponse.body.data.shop.privacyPolicy || null,
-      terms: shopResponse.body.data.shop.termsOfService || null,
-    };
+
+    // Fetch policies via Admin REST (works with read_legal_policies)
+    storeDetails.shopPolicies = await fetchShopPolicies(session);
 
     // Paginated fetching for products
     while (hasNextPage) {
@@ -854,5 +847,40 @@ async function fetchShippingInfo(session) {
   } catch (err) {
     console.error("Error fetching shipping info:", err);
     return { zones: [] };
+  }
+}
+
+/**
+ * Fetches shop policies (shipping, refund, privacy, terms)
+ * @param {Object} session - Shopify session
+ * @returns {Promise<Object>} Policies object
+ */
+async function fetchShopPolicies(session) {
+  try {
+    const rest = new shopify.api.clients.Rest({ session });
+    const resp = await rest.get({ path: "policies" });
+    const arr = resp?.body?.policies || [];
+
+    const byTitle = (needle) =>
+      arr.find((p) => p.title?.toLowerCase().includes(needle)) || null;
+
+    const normalize = (p) =>
+      p
+        ? {
+            title: p.title,
+            url: p.url || null,
+            body: p.body || "",
+          }
+        : null;
+
+    return {
+      shipping: normalize(byTitle("shipping")),
+      refund: normalize(byTitle("refund")),
+      privacy: normalize(byTitle("privacy")),
+      terms: normalize(byTitle("terms")),
+    };
+  } catch (e) {
+    console.error("Error fetching shop policies:", e);
+    return { shipping: null, refund: null, privacy: null, terms: null };
   }
 }
