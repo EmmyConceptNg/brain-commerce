@@ -19,6 +19,8 @@ export async function fetchShopifyStoreDetails(session) {
       blogPosts: [],
       homepage: null,
       totalCounts: { pages: 0, products: 0, categories: 0, blogPosts: 0 },
+      shopPolicies: null,
+      currencyCode: null,
     };
 
     // Fetch shop info and homepage
@@ -29,6 +31,7 @@ export async function fetchShopifyStoreDetails(session) {
           myshopifyDomain
           primaryDomain { url }
           description
+          currencyCode
           metafields(first: 10) {
             edges {
               node {
@@ -37,6 +40,10 @@ export async function fetchShopifyStoreDetails(session) {
               }
             }
           }
+          shippingPolicy { title url body }
+          refundPolicy { title url body }
+          privacyPolicy { title url body }
+          termsOfService { title url body }
         }
       }`,
     });
@@ -44,6 +51,13 @@ export async function fetchShopifyStoreDetails(session) {
       shopResponse.body.data.shop.primaryDomain?.url ||
       `https://${shopResponse.body.data.shop.myshopifyDomain}`;
     storeDetails.shopName = shopResponse.body.data.shop.name;
+    storeDetails.currencyCode = shopResponse.body.data.shop.currencyCode || null;
+    storeDetails.shopPolicies = {
+      shipping: shopResponse.body.data.shop.shippingPolicy || null,
+      refund: shopResponse.body.data.shop.refundPolicy || null,
+      privacy: shopResponse.body.data.shop.privacyPolicy || null,
+      terms: shopResponse.body.data.shop.termsOfService || null,
+    };
 
     // Paginated fetching for products
     while (hasNextPage) {
@@ -90,6 +104,8 @@ export async function fetchShopifyStoreDetails(session) {
                       compareAtPrice
                       sku
                       inventoryQuantity
+                      weight
+                      weightUnit
                     }
                   }
                 }
@@ -105,9 +121,9 @@ export async function fetchShopifyStoreDetails(session) {
           ...edge.node,
           url: `${storeDetails.storeUrl}/products/${edge.node.handle}`,
           metaImage: edge.node.featuredMedia?.image?.originalSrc || null,
-          productPrice: edge.node.variants?.edges?.[0]?.node?.price || null, // Add product price
+          productPrice: edge.node.variants?.edges?.[0]?.node?.price || null,
           productRegularPrice:
-            edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null, // Add regular price
+            edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null,
           collections:
             edge.node.collections?.edges?.map((col) => ({
               id: col.node.id,
@@ -122,7 +138,6 @@ export async function fetchShopifyStoreDetails(session) {
       cursor = pageInfo.endCursor;
     }
 
-    // Similar pagination for pages and collections
     // Paginated fetching for pages
     hasNextPage = true;
     cursor = null;
@@ -197,62 +212,65 @@ export async function fetchShopifyStoreDetails(session) {
     hasNextPage = true;
     cursor = null;
 
-   const response = await client.query({
-     data: `{
-    blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
-      edges {
-        node {
-          id
-          handle
-          title
-          articles(first: 5) {
-            edges {
-              node {
-                id
-                title
-                handle
+    const response = await client.query({
+      data: `{
+        blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
+          edges {
+            node {
+              id
+              handle
+              title
+              articles(first: 5) {
+                edges {
+                  node {
+                    id
+                    title
+                    handle
+                    contentHtml
+                    excerpt
+                    publishedAt
+                    tags
+                    image { url }
+                    authorV2 { name }
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
               }
-            }
-            pageInfo {
-              hasNextPage
-              endCursor
             }
           }
         }
-      }
+      }`,
+    });
+
+    // Optional: can be noisy
+    // console.log(JSON.stringify(response.body));
+
+    const blogs = response.body.data.blogs.edges;
+
+    for (const blog of blogs) {
+      const blogArticles = blog.node.articles.edges;
+
+      storeDetails.blogPosts.push(
+        ...blogArticles.map((article) => ({
+          id: article.node.id,
+          title: article.node.title,
+          handle: article.node.handle,
+          content: article.node.contentHtml,
+          excerpt: article.node.excerpt,
+          publishedAt: article.node.publishedAt,
+          tags: article.node.tags,
+          blogId: blog.node.id,
+          blogTitle: blog.node.title,
+          blogHandle: blog.node.handle,
+          url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
+          metaImage: article.node.image?.url || null,
+          author: article.node.authorV2?.name || "",
+        }))
+      );
     }
-  }`,
-   });
-
-
-   console.log(JSON.stringify(response.body));
-
-
-   const blogs = response.body.data.blogs.edges;
-
-   for (const blog of blogs) {
-     const blogArticles = blog.node.articles.edges;
-
-     storeDetails.blogPosts.push(
-       ...blogArticles.map((article) => ({
-         id: article.node.id,
-         title: article.node.title,
-         handle: article.node.handle,
-         content: article.node.contentHtml,
-         excerpt: article.node.excerpt,
-         publishedAt: article.node.publishedAt,
-         tags: article.node.tags,
-         blogId: blog.node.id,
-         blogTitle: blog.node.title,
-         blogHandle: blog.node.handle,
-         url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-         metaImage: article.node.image?.url || null,
-         author: article.node.authorV2?.name || "",
-       }))
-     );
-   }
-
-
 
     // Set homepage data
     storeDetails.homepage = {
@@ -309,8 +327,22 @@ export async function postToBrainCommerce(
     let user = await User.findOne({ shop: shop });
     if (!user) throw new Error("User not found");
 
-   
-    console.log('store details: ', JSON.stringify(storeDetails));
+    // Fetch shipping info once and log everything before syncing
+    const shippingInfo = await fetchShippingInfo(session);
+    console.log("=== Pre-sync overview ===");
+    console.log("Homepage:", JSON.stringify(storeDetails.homepage, null, 2));
+    console.log(`Pages (${storeDetails.pages.length}):`, JSON.stringify(storeDetails.pages, null, 2));
+    console.log(`Products (${storeDetails.products.length}):`, JSON.stringify(storeDetails.products, null, 2));
+    console.log(`Categories (${storeDetails.categories.length}):`, JSON.stringify(storeDetails.categories, null, 2));
+    console.log(`Blog posts (${storeDetails.blogPosts.length}):`, JSON.stringify(storeDetails.blogPosts, null, 2));
+    console.log("Shop policies:", JSON.stringify(storeDetails.shopPolicies || null, null, 2));
+    console.log("Shipping info:", JSON.stringify(shippingInfo, null, 2));
+
+    const extras = {
+      shippingInfo,
+      shopPolicies: storeDetails.shopPolicies || null,
+      currencyCode: storeDetails.currencyCode || null,
+    };
 
     // Process homepage (add this before processing other items)
     if (storeDetails.homepage) {
@@ -320,9 +352,9 @@ export async function postToBrainCommerce(
         storeDetails.storeUrl,
         apiKey,
         storeId,
-        session
+        session,
+        extras
       );
-      
     }
 
     // Process pages
@@ -333,10 +365,10 @@ export async function postToBrainCommerce(
         storeDetails.storeUrl,
         apiKey,
         storeId,
-        session
+        session,
+        extras
       );
       syncedPages++;
-      
     }
 
     // Process products
@@ -347,10 +379,10 @@ export async function postToBrainCommerce(
         storeDetails.storeUrl,
         apiKey,
         storeId,
-        session
+        session,
+        extras
       );
       syncedProducts++;
-      
     }
 
     // Process categories
@@ -361,7 +393,8 @@ export async function postToBrainCommerce(
         storeDetails.storeUrl,
         apiKey,
         storeId,
-        session
+        session,
+        extras
       );
       syncedCategories++;
     }
@@ -374,7 +407,8 @@ export async function postToBrainCommerce(
         storeDetails.storeUrl,
         apiKey,
         storeId,
-        session
+        session,
+        extras
       );
       syncedBlogPosts++;
     }
@@ -408,7 +442,7 @@ class RateLimit {
   }
 }
 
-async function processItem(item, user, storeUrl, apiKey, storeId, session) {
+async function processItem(item, user, storeUrl, apiKey, storeId, session, extras) {
   const baseEndpoint = `https://www.braincommerce.io/api/v0/store/create-update-page?storeID=${storeId}`;
   const headers = {
     Authorization: apiKey,
@@ -423,11 +457,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   let cleanedData;
   if (type === "product") {
     cleanedData = {
-      ...data, // Include all product data
+      ...data,
       inStock: data.totalInventory > 0 ? "In Stock" : "Out of Stock"
     };
   } else {
-    // For other types, keep the existing logic
     cleanedData = {
       id: data.id,
       title: data.title,
@@ -446,7 +479,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
   }
 
   switch (type) {
-    case "page":
+    case "page": {
       const pageUrl =
         cleanedData.onlineStoreUrl ||
         (cleanedData.handle ? `${storeUrl}/pages/${cleanedData.handle}` : null);
@@ -461,7 +494,12 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(pageUrl)}`;
 
       itemData = {
-        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        platformPageContent: JSON.stringify({
+          ...cleanedData,
+          shippingInfo: extras?.shippingInfo || null,
+          shopPolicies: extras?.shopPolicies || null,
+          currencyCode: extras?.currencyCode || null,
+        }, null, 2),
         pageType: "single",
         url: pageUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
@@ -479,12 +517,12 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         postID: cleanedData.id || "",
       };
 
-      console.log("Page content (page):", JSON.stringify(cleanedData, null, 2)); // Format with indentation
-
-      const pageResponse = await axios.post(endpoint, itemData, { headers });
+      console.log("Page content (page):", JSON.stringify(cleanedData, null, 2));
+      await axios.post(endpoint, itemData, { headers });
       break;
+    }
 
-    case "category":
+    case "category": {
       const categoryUrl =
         cleanedData.onlineStoreUrl ||
         (cleanedData.handle
@@ -500,21 +538,20 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
 
-      // Add top-selling categories to platformPageContent
       const topSellingProducts = await fetchTopSellingCategories(
         cleanedData.id,
         session,
         storeUrl
       );
 
-      // Get collection tags
-      // const collectionTags = await getCollectionTags(cleanedData.id, session);
-
       itemData = {
         platformPageContent: JSON.stringify(
           {
             ...cleanedData,
             topSellingProducts,
+            shippingInfo: extras?.shippingInfo || null,
+            shopPolicies: extras?.shopPolicies || null,
+            currencyCode: extras?.currencyCode || null,
           },
           null,
           2
@@ -545,14 +582,13 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       console.log(
         "Page content: (category)",
         JSON.stringify(itemData.platformPageContent, null, 2)
-      ); // Format with indentation
+      );
 
-      const categoryResponse = await axios.post(endpoint, itemData, {
-        headers,
-      });
+      await axios.post(endpoint, itemData, { headers });
       break;
+    }
 
-    case "product":
+    case "product": {
       const productUrl =
         cleanedData.onlineStoreUrl ||
         (cleanedData.handle
@@ -569,7 +605,12 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
 
       itemData = {
-        platformPageContent: JSON.stringify(cleanedData, null, 2), // Now includes all product data
+        platformPageContent: JSON.stringify({
+          ...cleanedData,
+          shippingInfo: extras?.shippingInfo || null,
+          shopPolicies: extras?.shopPolicies || null,
+          currencyCode: extras?.currencyCode || null,
+        }, null, 2),
         pageType: "single",
         url: productUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
@@ -606,10 +647,11 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
       );
       console.log("Page content: (product)", JSON.stringify(cleanedData, null, 2));
 
-      const productResponse = await axios.post(endpoint, itemData, { headers });
+      await axios.post(endpoint, itemData, { headers });
       break;
+    }
 
-    case "blogPost":
+    case "blogPost": {
       const blogPostUrl = cleanedData.url;
 
       if (!blogPostUrl) {
@@ -619,7 +661,12 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(blogPostUrl)}`;
       itemData = {
-        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        platformPageContent: JSON.stringify({
+          ...cleanedData,
+          shippingInfo: extras?.shippingInfo || null,
+          shopPolicies: extras?.shopPolicies || null,
+          currencyCode: extras?.currencyCode || null,
+        }, null, 2),
         pageType: "single",
         url: blogPostUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
@@ -642,16 +689,22 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
       console.log("Page content: (blog post)", JSON.stringify(cleanedData, null, 2));
 
-      const blogPostResponse = await axios.post(endpoint, itemData, { headers });
+      await axios.post(endpoint, itemData, { headers });
       break;
+    }
 
-    case "homepage":
+    case "homepage": {
       const homepageUrl = storeUrl;
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(homepageUrl)}`;
 
       itemData = {
-        platformPageContent: JSON.stringify(cleanedData, null, 2),
+        platformPageContent: JSON.stringify({
+          ...cleanedData,
+          shippingInfo: extras?.shippingInfo || null,
+          shopPolicies: extras?.shopPolicies || null,
+          currencyCode: extras?.currencyCode || null,
+        }, null, 2),
         pageType: "single",
         url: homepageUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
@@ -666,8 +719,9 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
       console.log("Page content: (homepage)", JSON.stringify(cleanedData, null, 2));
 
-      const homepageResponse = await axios.post(endpoint, itemData, { headers });
+      await axios.post(endpoint, itemData, { headers });
       break;
+    }
 
     default:
       console.warn(`Unknown item type: ${type}`);
@@ -755,5 +809,50 @@ async function getCollectionTags(collectionId, session) {
   } catch (error) {
     console.error("Error fetching collection tags:", error);
     return [];
+  }
+}
+
+// Helper: fetch shipping zones/rates (costs) via Admin REST API
+async function fetchShippingInfo(session) {
+  try {
+    const rest = new shopify.api.clients.Rest({ session });
+    const resp = await rest.get({ path: 'shipping_zones' });
+
+    const zones = (resp?.body?.shipping_zones || []).map((z) => ({
+      id: z.id,
+      name: z.name,
+      countries: (z.countries || []).map((c) => ({
+        code: c.code,
+        name: c.name,
+        provinces: (c.provinces || []).map((p) => ({
+          code: p.code,
+          name: p.name,
+          tax: p.tax,
+        })),
+      })),
+      priceBasedShippingRates: (z.price_based_shipping_rates || []).map((r) => ({
+        name: r.name,
+        minOrderSubtotal: r.min_order_subtotal,
+        maxOrderSubtotal: r.max_order_subtotal,
+        price: r.price,
+      })),
+      weightBasedShippingRates: (z.weight_based_shipping_rates || []).map((r) => ({
+        name: r.name,
+        minWeight: r.weight_low,
+        maxWeight: r.weight_high,
+        price: r.price,
+      })),
+      carrierShippingRateProviders: (z.carrier_shipping_rate_providers || []).map((p) => ({
+        carrierServiceId: p.carrier_service_id,
+        flatModifier: p.flat_modifier,
+        percentModifier: p.percent_modifier,
+        serviceFilter: p.service_filter,
+      })),
+    }));
+
+    return { zones };
+  } catch (err) {
+    console.error("Error fetching shipping info:", err);
+    return { zones: [] };
   }
 }
