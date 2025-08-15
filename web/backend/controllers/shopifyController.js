@@ -226,7 +226,6 @@ export async function fetchShopifyStoreDetails(session) {
                     title
                     handle
                     body
-                    excerpt
                     publishedAt
                     tags
                     image { 
@@ -260,15 +259,15 @@ export async function fetchShopifyStoreDetails(session) {
           id: article.node.id,
           title: article.node.title,
           handle: article.node.handle,
-          content: article.node.body,            // was content/contentHtml
-          excerpt: article.node.excerpt,
+          content: article.node.body,
+          excerpt: makeExcerpt(article.node.body),   // derive from body
           publishedAt: article.node.publishedAt,
           tags: article.node.tags,
           blogId: blog.node.id,
           blogTitle: blog.node.title,
           blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-          metaImage: article.node.image?.url || null,  // prefer url
+          metaImage: article.node.image?.url || null,
           author: article.node.authorV2?.name || "",
         }))
       );
@@ -885,4 +884,13 @@ async function fetchShopPolicies(session) {
     console.error("Error fetching shop policies:", e);
     return { shipping: null, refund: null, privacy: null, terms: null };
   }
+}
+
+// Add helpers to derive a plain-text excerpt from HTML
+function htmlToText(html) {
+  return (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+function makeExcerpt(html, maxLen = 300) {
+  const text = htmlToText(html);
+  return text.length > maxLen ? `${text.slice(0, maxLen)}…` : text;
 }
