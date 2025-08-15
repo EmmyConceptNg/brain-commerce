@@ -232,7 +232,9 @@ export async function fetchShopifyStoreDetails(session) {
                       originalSrc
                       altText
                     }
-                    author
+                    author { 
+                      name 
+                    }
                   }
                 }
                 pageInfo {
@@ -268,7 +270,7 @@ export async function fetchShopifyStoreDetails(session) {
           blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
           metaImage: article.node.image?.originalSrc || null,
-          author: article.node.author || "",
+          author: article.node.author?.name || "",
         }))
       );
     }
