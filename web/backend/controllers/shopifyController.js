@@ -225,11 +225,14 @@ export async function fetchShopifyStoreDetails(session) {
                     id
                     title
                     handle
-                    contentHtml
+                    content
                     excerpt
                     publishedAt
                     tags
-                    image { url }
+                    image { 
+                      originalSrc
+                      altText
+                    }
                     authorV2 { name }
                   }
                 }
@@ -257,7 +260,7 @@ export async function fetchShopifyStoreDetails(session) {
           id: article.node.id,
           title: article.node.title,
           handle: article.node.handle,
-          content: article.node.contentHtml,
+          content: article.node.content,
           excerpt: article.node.excerpt,
           publishedAt: article.node.publishedAt,
           tags: article.node.tags,
@@ -265,7 +268,7 @@ export async function fetchShopifyStoreDetails(session) {
           blogTitle: blog.node.title,
           blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-          metaImage: article.node.image?.url || null,
+          metaImage: article.node.image?.originalSrc || null,
           author: article.node.authorV2?.name || "",
         }))
       );
@@ -460,21 +463,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session, extra
       inStock: data.totalInventory > 0 ? "In Stock" : "Out of Stock"
     };
   } else {
-    cleanedData = {
-      id: data.id,
-      title: data.title,
-      descriptionHtml: data.descriptionHtml,
-      vendor: data.vendor,
-      productType: data.productType,
-      tags: data.tags,
-      handle: data.handle,
-      featuredMedia: data.featuredMedia,
-      url: data.url,
-      metaImage: data.metaImage,
-      productPrice: data.productPrice,
-      productRegularPrice: data.productRegularPrice,
-      collections: data.collections || []
-    };
+    cleanedData = { ...data };
   }
 
   switch (type) {
@@ -677,10 +666,10 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session, extra
         url: blogPostUrl,
         h1: cleanedData.h1 || cleanedData.title || "",
         title: cleanedData.title || "",
-        description: data.contentHtml || data.excerpt || "",
+        description: cleanedData.content || cleanedData.excerpt || "",
         metaImage: cleanedData.metaImage || "",
-        keywords: cleanedData.keywords || data.tags?.join(", ") || "",
-        visibleText: data.contentHtml || "",
+        keywords: cleanedData.keywords || (cleanedData.tags?.join(", ") || ""),
+        visibleText: cleanedData.content || "",
         breadcrumbs: [
           ...new Set([
             ...(cleanedData.tags || []),
@@ -688,8 +677,8 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session, extra
           ]),
         ],
         blogID: cleanedData.id || "",
-        author: data.author?.name || "",
-        publishedAt: data.publishedAt || "",
+        author: cleanedData.author || "",
+        publishedAt: cleanedData.publishedAt || "",
         blogTitle: cleanedData.blogTitle || ""
       };
 
