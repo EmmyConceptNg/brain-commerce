@@ -225,12 +225,12 @@ export async function fetchShopifyStoreDetails(session) {
                     id
                     title
                     handle
-                    content
+                    body
                     excerpt
                     publishedAt
                     tags
                     image { 
-                      originalSrc
+                      url
                       altText
                     }
                     authorV2 { name }
@@ -260,7 +260,7 @@ export async function fetchShopifyStoreDetails(session) {
           id: article.node.id,
           title: article.node.title,
           handle: article.node.handle,
-          content: article.node.content,
+          content: article.node.body,            // was content/contentHtml
           excerpt: article.node.excerpt,
           publishedAt: article.node.publishedAt,
           tags: article.node.tags,
@@ -268,7 +268,7 @@ export async function fetchShopifyStoreDetails(session) {
           blogTitle: blog.node.title,
           blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-          metaImage: article.node.image?.originalSrc || null,
+          metaImage: article.node.image?.url || null,  // prefer url
           author: article.node.authorV2?.name || "",
         }))
       );
