@@ -229,10 +229,10 @@ export async function fetchShopifyStoreDetails(session) {
                     publishedAt
                     tags
                     image { 
-                      url
+                      originalSrc
                       altText
                     }
-                    authorV2 { name }
+                    author
                   }
                 }
                 pageInfo {
@@ -260,15 +260,15 @@ export async function fetchShopifyStoreDetails(session) {
           title: article.node.title,
           handle: article.node.handle,
           content: article.node.body,
-          excerpt: makeExcerpt(article.node.body),   // derive from body
+          excerpt: makeExcerpt(article.node.body),
           publishedAt: article.node.publishedAt,
           tags: article.node.tags,
           blogId: blog.node.id,
           blogTitle: blog.node.title,
           blogHandle: blog.node.handle,
           url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-          metaImage: article.node.image?.url || null,
-          author: article.node.authorV2?.name || "",
+          metaImage: article.node.image?.originalSrc || null,
+          author: article.node.author || "",
         }))
       );
     }
