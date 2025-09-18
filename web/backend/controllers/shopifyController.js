@@ -1,6 +1,8 @@
 import shopify from "../../shopify.js";
 import axios from "axios";
 import User from "../models/User.js";
+// Add cheerio loader for visible content extraction
+import { load as cheerioLoad } from "cheerio";
 
 /**
  * Fetches Shopify store details
@@ -458,6 +460,15 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         return;
       }
 
+      // Crawl visible text for the page
+      {
+        const vt = await fetchVisibleTextFromUrl(pageUrl);
+        if (vt) {
+          const base = cleanedData.visibleText || cleanedData.body || cleanedData.descriptionHtml || "";
+          cleanedData.visibleText = mergeVisibleText(base, vt);
+        }
+      }
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(pageUrl)}`;
 
       itemData = {
@@ -496,6 +507,15 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
           `Skipping category with ID ${cleanedData.id} - no URL available`
         );
         return;
+      }
+
+      // Crawl visible text for the category
+      {
+        const vt = await fetchVisibleTextFromUrl(categoryUrl);
+        if (vt) {
+          const base = cleanedData.visibleText || cleanedData.body || cleanedData.descriptionHtml || "";
+          cleanedData.visibleText = mergeVisibleText(base, vt);
+        }
       }
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(categoryUrl)}`;
@@ -566,6 +586,19 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         return;
       }
 
+      // Crawl visible text for the product
+      {
+        const vt = await fetchVisibleTextFromUrl(productUrl);
+        if (vt) {
+          const base =
+            cleanedData.visibleText ||
+            cleanedData.descriptionHtml ||
+            cleanedData.description ||
+            "";
+          cleanedData.visibleText = mergeVisibleText(base, vt);
+        }
+      }
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(productUrl)}`;
 
       itemData = {
@@ -617,6 +650,19 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         return;
       }
 
+      // Crawl visible text for the blog post
+      {
+        const vt = await fetchVisibleTextFromUrl(blogPostUrl);
+        if (vt) {
+          const base =
+            cleanedData.visibleText ||
+            data.contentHtml ||
+            data.excerpt ||
+            "";
+          cleanedData.visibleText = mergeVisibleText(base, vt);
+        }
+      }
+
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(blogPostUrl)}`;
       itemData = {
         platformPageContent: JSON.stringify(cleanedData, null, 2),
@@ -627,7 +673,7 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
         description: data.contentHtml || data.excerpt || "",
         metaImage: cleanedData.metaImage || "",
         keywords: cleanedData.keywords || data.tags?.join(", ") || "",
-        visibleText: data.contentHtml || "",
+        visibleText: cleanedData.visibleText || "",
         breadcrumbs: [
           ...new Set([
             ...(cleanedData.tags || []),
@@ -647,6 +693,15 @@ async function processItem(item, user, storeUrl, apiKey, storeId, session) {
 
     case "homepage":
       const homepageUrl = storeUrl;
+
+      // Crawl visible text for the homepage
+      {
+        const vt = await fetchVisibleTextFromUrl(homepageUrl);
+        if (vt) {
+          const base = cleanedData.visibleText || cleanedData.description || "";
+          cleanedData.visibleText = mergeVisibleText(base, vt);
+        }
+      }
 
       endpoint = `${baseEndpoint}&url=${encodeURIComponent(homepageUrl)}`;
 
@@ -737,6 +792,62 @@ async function fetchTopSellingCategories(categoryId, session, storeUrl) {
     console.error("Error fetching top-selling products for category:", error);
     return null;
   }
+}
+
+// Add new helper to crawl visible text from a public URL
+async function fetchVisibleTextFromUrl(url) {
+  try {
+    const res = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        // Friendly UA to reduce chances of being blocked by storefronts
+        "User-Agent": "BrainCommerceBot/1.0 (+https://www.braincommerce.io)"
+      }
+    });
+
+    const html = typeof res.data === "string" ? res.data : "";
+    if (!html) return "";
+
+    const $ = cheerioLoad(html);
+
+    // Remove non-content and non-visible elements
+    $("script, style, noscript, meta, link, svg, canvas, iframe, picture, source, video, audio, object").remove();
+    $("nav, header, footer, aside").remove();
+    // Elements likely hidden
+    $("[aria-hidden='true'], [hidden], [type='hidden']").remove();
+    $("[style]").each((_, el) => {
+      const style = ($(el).attr("style") || "").toLowerCase();
+      if (style.includes("display:none") || style.includes("visibility:hidden") || style.includes("opacity:0")) {
+        $(el).remove();
+      }
+    });
+
+    // Get text and normalize whitespace
+    const text = $("body").text() || "";
+    const normalized = text.replace(/\s+/g, " ").trim();
+
+    // Optionally cap size to avoid extremely large payloads
+    return normalized.slice(0, 50000);
+  } catch (err) {
+    console.warn(`Visible text extraction failed for ${url}: ${err?.message}`);
+    return "";
+  }
+}
+
+// Append crawled text instead of overwriting
+function mergeVisibleText(existingText, crawledText) {
+  const a = (existingText || "").toString().trim();
+  const b = (crawledText || "").toString().trim();
+  if (!b) return a;
+  if (!a) return b;
+
+  // If most of crawled text already appears, avoid duplication
+  const probe = b.slice(0, Math.min(200, b.length));
+  if (a.includes(probe)) return a;
+
+  const combined = `${a}\n\n${b}`.replace(/\s+/g, " ").trim();
+  // Cap to avoid huge payloads
+  return combined.slice(0, 50000);
 }
 
 // Add new helper function to get collection tags
