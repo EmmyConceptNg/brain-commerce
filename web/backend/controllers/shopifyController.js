@@ -3,7 +3,7 @@ import axios from "axios";
 import User from "../models/User.js";
 // Add cheerio loader for visible content extraction
 import { load as cheerioLoad } from "cheerio";
-
+//13-02-2026
 /**
  * Fetches Shopify store details
  * @param {Object} session - Shopify session
@@ -78,7 +78,7 @@ export async function fetchShopifyStoreDetails(session) {
                 featuredMedia {
                   ... on MediaImage {
                     image {
-                      originalSrc
+                      url
                       altText
                     }
                   }
@@ -95,6 +95,15 @@ export async function fetchShopifyStoreDetails(session) {
                     }
                   }
                 }
+                metafields(first: 50) {
+                  edges {
+                    node {
+                      namespace
+                      key
+                      value
+                    }
+                  }
+                }
               }
             }
           }
@@ -106,10 +115,16 @@ export async function fetchShopifyStoreDetails(session) {
         ...edges.map((edge) => ({
           ...edge.node,
           url: `${storeDetails.storeUrl}/products/${edge.node.handle}`,
-          metaImage: edge.node.featuredMedia?.image?.originalSrc || null,
+          metaImage: edge.node.featuredMedia?.image?.url || null,
           productPrice: edge.node.variants?.edges?.[0]?.node?.price || null, // Add product price
           productRegularPrice:
             edge.node.variants?.edges?.[0]?.node?.compareAtPrice || null, // Add regular price
+          metafields:
+            edge.node.metafields?.edges?.map((m) => ({
+              namespace: m.node.namespace,
+              key: m.node.key,
+              value: m.node.value,
+            })) || [],
           collections:
             edge.node.collections?.edges?.map((col) => ({
               id: col.node.id,
@@ -199,8 +214,8 @@ export async function fetchShopifyStoreDetails(session) {
     hasNextPage = true;
     cursor = null;
 
-   const response = await client.query({
-     data: `{
+    const response = await client.query({
+      data: `{
     blogs(first: 250${cursor ? `, after: "${cursor}"` : ""}) {
       edges {
         node {
@@ -224,35 +239,35 @@ export async function fetchShopifyStoreDetails(session) {
       }
     }
   }`,
-   });
+    });
 
 
-   console.log(JSON.stringify(response.body));
+    console.log(JSON.stringify(response.body));
 
 
-   const blogs = response.body.data.blogs.edges;
+    const blogs = response.body.data.blogs.edges;
 
-   for (const blog of blogs) {
-     const blogArticles = blog.node.articles.edges;
+    for (const blog of blogs) {
+      const blogArticles = blog.node.articles.edges;
 
-     storeDetails.blogPosts.push(
-       ...blogArticles.map((article) => ({
-         id: article.node.id,
-         title: article.node.title,
-         handle: article.node.handle,
-         content: article.node.contentHtml,
-         excerpt: article.node.excerpt,
-         publishedAt: article.node.publishedAt,
-         tags: article.node.tags,
-         blogId: blog.node.id,
-         blogTitle: blog.node.title,
-         blogHandle: blog.node.handle,
-         url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
-         metaImage: article.node.image?.url || null,
-         author: article.node.authorV2?.name || "",
-       }))
-     );
-   }
+      storeDetails.blogPosts.push(
+        ...blogArticles.map((article) => ({
+          id: article.node.id,
+          title: article.node.title,
+          handle: article.node.handle,
+          content: article.node.contentHtml,
+          excerpt: article.node.excerpt,
+          publishedAt: article.node.publishedAt,
+          tags: article.node.tags,
+          blogId: blog.node.id,
+          blogTitle: blog.node.title,
+          blogHandle: blog.node.handle,
+          url: `${storeDetails.storeUrl}/blogs/${blog.node.handle}/${article.node.handle}`,
+          metaImage: article.node.image?.url || null,
+          author: article.node.authorV2?.name || "",
+        }))
+      );
+    }
 
 
 
@@ -311,7 +326,7 @@ export async function postToBrainCommerce(
     let user = await User.findOne({ shop: shop });
     if (!user) throw new Error("User not found");
 
-   
+
     console.log('store details: ', JSON.stringify(storeDetails));
 
     // Process homepage (add this before processing other items)
@@ -324,7 +339,7 @@ export async function postToBrainCommerce(
         storeId,
         session
       );
-      
+
     }
 
     // Process pages
@@ -338,7 +353,7 @@ export async function postToBrainCommerce(
         session
       );
       syncedPages++;
-      
+
     }
 
     // Process products
@@ -352,7 +367,7 @@ export async function postToBrainCommerce(
         session
       );
       syncedProducts++;
-      
+
     }
 
     // Process categories
@@ -747,7 +762,7 @@ async function fetchTopSellingCategories(categoryId, session, storeUrl) {
                 handle
                 totalInventory
                 featuredImage {
-                  originalSrc
+                  url
                   altText
                 }
                 priceRange {
@@ -776,7 +791,7 @@ async function fetchTopSellingCategories(categoryId, session, storeUrl) {
       title: node.title,
       handle: node.handle,
       url: `${storeUrl}/products/${node.handle}`,
-      image: node.featuredImage?.originalSrc || null,
+      image: node.featuredImage?.url || null,
       imageAlt: node.featuredImage?.altText || null,
       price: node.priceRange.minVariantPrice.amount,
       currencyCode: node.priceRange.minVariantPrice.currencyCode
@@ -814,7 +829,8 @@ async function fetchVisibleTextFromUrl(url) {
     $("script, style, noscript, meta, link, svg, canvas, iframe, picture, source, video, audio, object").remove();
     $("nav, header, footer, aside").remove();
     // Elements likely hidden
-    $("[aria-hidden='true'], [hidden], [type='hidden']").remove();
+    // $("[aria-hidden='true']").remove(); // aggressive removal might kill accordions
+    $("[hidden], [type='hidden']").remove();
     $("[style]").each((_, el) => {
       const style = ($(el).attr("style") || "").toLowerCase();
       if (style.includes("display:none") || style.includes("visibility:hidden") || style.includes("opacity:0")) {

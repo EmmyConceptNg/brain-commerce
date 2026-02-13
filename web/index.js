@@ -1,4 +1,5 @@
 // @ts-check
+//13-02-2026
 import { join } from "path";
 import { readFileSync } from "fs";
 import express from "express";
@@ -124,6 +125,57 @@ app.use(
 app.get("/debug", (req, res) => {
   console.log("Shopify Session:", res.locals.shopify);
   res.json(res.locals.shopify);
+});
+
+
+// In your backend API routes
+app.get('/api/v1/get-app-config', async (req, res) => {
+  try {
+    // Only return the client secret server-side
+    res.json({
+      success: true,
+      clientSecret: process.env.SHOPIFY_API_SECRET // Server-side env variable
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Proxy route: forwards access token (client secret) to Brain Commerce
+// Avoids CORS issues since the browser cannot call braincommerce.io directly from the embedded app
+app.post('/api/v1/update-access-token', shopify.validateAuthenticatedSession(), async (req, res) => {
+  try {
+    const { storeID, websiteShopifyURL, accessToken } = req.body;
+
+    if (!storeID || !websiteShopifyURL || !accessToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: storeID, websiteShopifyURL, accessToken',
+      });
+    }
+
+    const response = await fetch(
+      'https://braincommerce.io/api/v0/store/shopify/webhooks/shopify-update-access-token',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeID, websiteShopifyURL, accessToken }),
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      console.log('✅ Access token forwarded to Brain Commerce successfully');
+      return res.status(200).json({ success: true, data });
+    } else {
+      console.error('⚠️ Brain Commerce responded with error:', response.status, data);
+      return res.status(response.status).json({ success: false, error: data });
+    }
+  } catch (error) {
+    console.error('❌ Error proxying access token to Brain Commerce:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 
