@@ -3,7 +3,7 @@ import axios from "axios";
 import User from "../models/User.js";
 // Add cheerio loader for visible content extraction
 import { load as cheerioLoad } from "cheerio";
-//13-02-2026
+//13-02-2026 
 
 /**
  * Fetches Shopify store details
