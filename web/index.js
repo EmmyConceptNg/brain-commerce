@@ -141,6 +141,7 @@ app.get('/api/v1/get-app-config', async (req, res) => {
   }
 });
 
+
 // Proxy route: forwards access token (client secret) to Brain Commerce
 // Avoids CORS issues since the browser cannot call braincommerce.io directly from the embedded app
 app.post('/api/v1/update-access-token', shopify.validateAuthenticatedSession(), async (req, res) => {

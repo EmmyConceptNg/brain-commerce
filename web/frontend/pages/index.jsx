@@ -66,15 +66,15 @@ export default function HomePage() {
           const data = await response.json();
           if (data.success && data.clientSecret) {
             setClientSecret(data.clientSecret);
-            console.log('✅ Client secret fetched from backend');
+            //console.log('✅ Client secret fetched from backend');
           } else {
-            console.log('⚠️ Client secret not available in response');
+            //console.log('⚠️ Client secret not available in response');
           }
         } else {
-          console.log('⚠️ Could not fetch client secret from backend');
+          //console.log('⚠️ Could not fetch client secret from backend');
         }
       } catch (error) {
-        console.error('Error fetching client secret:', error);
+        //console.error('Error fetching client secret:', error);
       }
     };
 
@@ -107,11 +107,11 @@ export default function HomePage() {
 
       const data = await response.json();
       if (data.validated) {
-        console.log("API Key and Store ID are valid");
+        //console.log("API Key and Store ID are valid");
         dispatch(setCredentials({ apiKey, storeId }));
         return true;
       } else {
-        console.log("Invalid API Key or Store ID");
+        //console.log("Invalid API Key or Store ID");
         setErrors({
           apiKey: data.error ? "Invalid API Key" : "",
           storeId: data.error ? "Invalid Store ID" : "",
@@ -119,7 +119,7 @@ export default function HomePage() {
         return false;
       }
     } catch (error) {
-      console.error("Error validating API Key and Store ID:", error);
+      //console.error("Error validating API Key and Store ID:", error);
       setErrors({
         apiKey: "Error validating credentials",
         storeId: "Error validating credentials",
@@ -146,14 +146,14 @@ export default function HomePage() {
 
       const data = await response.json();
       if (data.success) {
-        console.log("Shopify data synced successfully");
+        //console.log("Shopify data synced successfully");
         return true;
       } else {
-        console.log("Failed to sync Shopify data");
+        //console.log("Failed to sync Shopify data");
         return false;
       }
     } catch (error) {
-      console.error("Error syncing Shopify data:", error);
+      //console.error("Error syncing Shopify data:", error);
       return false;
     }
   };
@@ -177,14 +177,14 @@ export default function HomePage() {
 
       const data = await response.json();
       if (data.success) {
-        console.log("Webhooks checked successfully", data);
+        //console.log("Webhooks checked successfully", data);
         return true;
       } else {
-        console.log("Failed to check webhooks");
+        //console.log("Failed to check webhooks");
         return false;
       }
     } catch (error) {
-      console.error("Error checking webhooks:", error);
+      //console.error("Error checking webhooks:", error);
       return false;
     }
   };
@@ -198,7 +198,7 @@ export default function HomePage() {
         accessToken: clientSecret,
       };
 
-      console.log('📤 Sending access token to Brain Commerce (via proxy)...');
+      //console.log('📤 Sending access token to Brain Commerce (via proxy)...');
 
       const response = await fetch('/api/v1/update-access-token', {
         method: 'POST',
@@ -212,25 +212,25 @@ export default function HomePage() {
       const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
-        console.log('✅ Access token sent to Brain Commerce successfully');
+        //console.log('✅ Access token sent to Brain Commerce successfully');
         return true;
       } else {
-        console.warn('⚠️ Access token webhook failed:', response.status, data);
+        //console.warn('⚠️ Access token webhook failed:', response.status, data);
         return false;
       }
     } catch (error) {
-      console.error('❌ Error sending access token to Brain Commerce:', error);
+      //console.error('❌ Error sending access token to Brain Commerce:', error);
       return false;
     }
   };
 
   // Log store information with detailed formatting
   const logStoreInformation = () => {
-    console.log("\n");
-    console.log("═══════════════════════════════════════════════════════════════════════════");
-    console.log("                      SHOPIFY STORE INFORMATION                            ");
-    console.log("═══════════════════════════════════════════════════════════════════════════");
-    console.log("");
+    //console.log("\n");
+    //console.log("═══════════════════════════════════════════════════════════════════════════");
+    //console.log("                      SHOPIFY STORE INFORMATION                            ");
+    //console.log("═══════════════════════════════════════════════════════════════════════════");
+    //console.log("");
 
     // Get app bridge config for Client ID and other details
     let host = "N/A";
@@ -243,64 +243,64 @@ export default function HomePage() {
       appApiKey = config.apiKey || "N/A";
       clientId = config.apiKey || "N/A";
     } catch (error) {
-      console.log("⚠️  Note: App Bridge config not available");
+      //console.log("⚠️  Note: App Bridge config not available");
     }
 
     // Display information matching the screenshot format
-    console.log("║ 🏪 Shop Domain: " + shop);
-    console.log("║ 📛 Store Handle: " + storeHandle);
-    console.log("║ 🆔 Store ID (Brain Commerce): " + storeId);
-    console.log("║ 🔑 API Key: " + apiKey);
-    console.log("║ 🌐 Host: " + host);
-    console.log("║ 🔧 App API Key: " + appApiKey);
-    console.log("║ 🔐 Client ID: " + clientId);
-    console.log("║ 🔒 Client Secret: " + clientSecret);
-    console.log("║ ⏰ Current Time: " + new Date().toLocaleString());
+    //console.log("║ 🏪 Shop Domain: " + shop);
+    //console.log("║ 📛 Store Handle: " + storeHandle);
+    //console.log("║ 🆔 Store ID (Brain Commerce): " + storeId);
+    //console.log("║ 🔑 API Key: " + apiKey);
+    //console.log("║ 🌐 Host: " + host);
+    //console.log("║ 🔧 App API Key: " + appApiKey);
+    //console.log("║ 🔐 Client ID: " + clientId);
+    //console.log("║ 🔒 Client Secret: " + clientSecret);
+    //console.log("║ ⏰ Current Time: " + new Date().toLocaleString());
 
-    console.log("");
-    console.log("═══════════════════════════════════════════════════════════════════════════");
-    console.log("");
+    //console.log("");
+    //console.log("═══════════════════════════════════════════════════════════════════════════");
+    //console.log("");
   };
 
   const handleSync = async () => {
     if (!validateFields()) {
-      console.log('❌ Sync cancelled: Validation failed');
+      //console.log('❌ Sync cancelled: Validation failed');
       return;
     }
 
     logStoreInformation();
 
-    console.log('🔄 Starting sync...');
+    //console.log('🔄 Starting sync...');
     setSyncing(true);
 
     try {
-      console.log('🔐 Validating API Key and Store ID...');
+      //console.log('🔐 Validating API Key and Store ID...');
       const isValid = await validateApiKeyAndStoreId();
 
       if (isValid) {
-        console.log('✅ Credentials validated successfully');
-        console.log('📦 Syncing Shopify data...');
+        //console.log('✅ Credentials validated successfully');
+        //console.log('📦 Syncing Shopify data...');
         const syncSuccess = await syncShopifyData();
 
         if (syncSuccess) {
           // Send access token webhook to Brain Commerce
           await sendAccessTokenWebhook();
 
-          console.log('✅ Manual sync completed successfully');
+          //console.log('✅ Manual sync completed successfully');
           toast.success("Shopify data synced successfully!");
         } else {
-          console.log('❌ Sync failed');
+          //console.log('❌ Sync failed');
           toast.error("Failed to sync Shopify data");
         }
       } else {
-        console.log('❌ Credential validation failed');
+        //console.log('❌ Credential validation failed');
       }
     } catch (error) {
-      console.error('❌ Sync error:', error);
+      //console.error('❌ Sync error:', error);
       toast.error("Error during sync");
     } finally {
       setSyncing(false);
-      console.log('🏁 Sync process completed');
+      //console.log('🏁 Sync process completed');
     }
   };
 
@@ -354,7 +354,7 @@ export default function HomePage() {
       });
 
       const data = await createResponse.json();
-      console.log('Webhook activation response:', data);
+      //console.log('Webhook activation response:', data);
 
       if (createResponse.ok && data.results) {
         const allWebhooksSuccessful = data.results.every(result => result.success);
@@ -371,7 +371,7 @@ export default function HomePage() {
               error: result.error || 'Unknown error'
             }));
 
-          console.error('Failed webhooks:', failedWebhooks);
+          //console.error('Failed webhooks:', failedWebhooks);
           await sendAccessTokenWebhook();
           toast.success("All webhooks activated successfully!");
         }
@@ -381,7 +381,7 @@ export default function HomePage() {
       }
 
     } catch (error) {
-      console.error('Error activating webhooks:', error);
+      //console.error('Error activating webhooks:', error);
       toast.error('Error activating webhooks: ' + error.message);
     } finally {
       setActivating(false);
